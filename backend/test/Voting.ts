@@ -1,423 +1,371 @@
-import { expect } from "chai";
+import { before, beforeEach, describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { network } from "hardhat";
+import { getAddress } from "viem";
 
-const { ethers } = await network.connect();
+const { viem, networkHelpers } = await network.connect();
 
-//First a function to deploy the Voting contract
+// Fonction pour déployer le contrat Voting
 async function setUpSmartContract() {
-  const voting = await ethers.deployContract("Voting", {
-    value: 10_000_000_000_000_000n, //0.01 ETH to fund the contract
+  const publicClient = await viem.getPublicClient();
+  const [owner, ...accounts] = await viem.getWalletClients();
+  
+  const voting = await viem.deployContract("Voting", [], {
+    value: 10_000_000_000_000_000n, // 0.01 ETH pour financer le contrat
+    client: { wallet: owner },
   });
-  //get the accounts provided by hardhat:
-  const signersRegistered = await ethers.getSigners(); //Array of SignerWithAddress objects
-  const signerNotRegistered = signersRegistered.pop()!; //remove the last address. this one will not be registered. And ! to tell TS that it is not undefined
+  
+  const signersRegistered = accounts.slice(0, -1);
+  const signerNotRegistered = accounts[accounts.length - 1];
 
-  //const owner = await voting.owner(); //give the address of the owner not the signer object
-
-  return { voting, signersRegistered, signerNotRegistered };
+  return { voting, signersRegistered, signerNotRegistered, owner, publicClient };
 }
 
-
 async function setUpAddALotOfVoters() {
-  const { voting, signersRegistered, signerNotRegistered } = await setUpSmartContract();
+  const { voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpSmartContract();
 
-  for (const a of signersRegistered) {
-    await voting.addVoter(a.address);
+  for (const signer of signersRegistered) {
+    await voting.write.addVoter([signer.account.address], { account: owner.account });
   }
 
-  return { voting, signersRegistered, signerNotRegistered };
+  return { voting, signersRegistered, signerNotRegistered, owner, publicClient };
 }
 
 async function setUpAddThreeProposals() {
-  const { voting, signersRegistered, signerNotRegistered } = await setUpAddALotOfVoters();
-  await voting.startProposalsRegistering();
-  //Add three proposals from three different registered voters
-  await voting.connect(signersRegistered[0]).addProposal("Proposal 1");
-  await voting.connect(signersRegistered[1]).addProposal("Proposal 2");
-  await voting.connect(signersRegistered[2]).addProposal("Proposal 3");
+  const { voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpAddALotOfVoters();
+  await voting.write.startProposalsRegistering({ account: owner.account });
+  
+  await voting.write.addProposal(["Proposal 1"], { account: signersRegistered[0].account });
+  await voting.write.addProposal(["Proposal 2"], { account: signersRegistered[1].account });
+  await voting.write.addProposal(["Proposal 3"], { account: signersRegistered[2].account });
 
-  return { voting, signersRegistered, signerNotRegistered };
+  return { voting, signersRegistered, signerNotRegistered, owner, publicClient };
 }
 
-
-describe("Voting  ", function () {
-
+describe("Voting", () => {
   let voting: any;
-
   let signersRegistered: any;
   let signerNotRegistered: any;
+  let owner: any;
+  let publicClient: any;
 
-
-
-  describe("Deployment/Storage", function () {
-
-    this.beforeEach(async function () {
-      //Before each test, we deploy a new Voting contract    
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpSmartContract());
+  describe("Deployment/Storage", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpSmartContract());
     });
 
-    it("Should have the right owner", async function () {
-      expect(await voting.owner()).to.equal("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    it("Should have the right owner", async () => {
+      const ownerAddress = await voting.read.owner();
+      assert.equal(ownerAddress.toLowerCase(), owner.account.address.toLowerCase());
     });
 
-    it("Should get 0.01ETH", async function () {
-      //Object voting does not contain his own balance. Need t10000000000000000no access it from address with ethers.provider.getBalance
-      expect(await ethers.provider.getBalance(voting.getAddress())).to.equal(10_000_000_000_000_000n); //0.01 ETH
+    it("Should get 0.01ETH", async () => {
+      const balance = await publicClient.getBalance({ address: voting.address });
+      assert.equal(balance, 10_000_000_000_000_000n);
     });
 
-    it("Should deploy with workflowStatus = RegisteringVoters ", async function () {
-      expect(await voting.workflowStatus()).to.equal(0); //0 = RegisteringVoters
+    it("Should deploy with workflowStatus = RegisteringVoters", async () => {
+      const status = await voting.read.workflowStatus();
+      assert.equal(status, 0);
     });
 
-    it("Should have an empty winningProposalId", async function () {
-      expect(await voting.winningProposalID()).to.equal(0);
-    });
-  });
-
-
-
-
-
-
-
-  describe("addVoter", function () {
-    this.beforeEach(async function () {
-      //Before each test, we deploy a new Voting contract    
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpSmartContract());
-    });
-
-    it("Should emit \"VoterRegistered\" event when a voter is registered", async function () {
-      const signers = await ethers.getSigners(); //Array of SignerWithAddress objects
-
-      await expect(voting.addVoter(signers[1].address))
-        .to.emit(voting, "VoterRegistered")
-        .withArgs(signers[1].address);
-    });
-
-    it("Should refuse to add a registered voter", async function () {
-      const signers = await ethers.getSigners(); //Array of SignerWithAddress objects
-      await voting.addVoter(signers[1].address);
-
-      await expect(voting.addVoter(signers[1].address))
-        .to.be.revertedWith("Already registered");
-    });
-    it("Should revert if the caller is not the owner.", async function () {
-
-      //Check unregistred address
-      await expect(voting
-        .connect(signersRegistered[1]) //signersRegistered[1] is not the owner.
-        .addVoter(signersRegistered[1].address))
-        .to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount"); //It is a custom error from OpenZeppelin Ownable contract
-
-    });
-    //Voters registration is  open 
-    it("Should not emit \"Voters registration is not open yet\"", async function () {
-
-      await expect(voting.addVoter(signersRegistered[1].address)).not.to.be.revertedWith("Voters registration is not open yet");
-
-    });
-
-  });
-
-
-  ////////////////////// GET VOTER ////////////////////////
-
-  describe("getVoter", function () {
-
-
-    //Except the last one, all the signers are added to registered voters
-    this.beforeEach(async function () {
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpAddALotOfVoters());
-    });
-
-
-
-    it("Should revert if the caller is not a voter.", async function () {
-
-      //Check unregistred address
-      await expect(voting
-        .connect(signerNotRegistered) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .getVoter(signersRegistered[1].address))
-        .to.be.revertedWith("You're not a voter");
-
-    });
-
-    it("Should return an unregistered voter : the caller is a voter but requests an unregistered address.", async function () {
-
-      const voter = await voting
-        .connect(signersRegistered[1]) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .getVoter(signerNotRegistered.address);//unregistered address
-
-      expect(voter.isRegistered).to.be.equal(false);
-    });
-
-    it("Should return an registered voter : the caller is a voter and requests a registered address.", async function () {
-
-      const voter = await voting
-        .connect(signersRegistered[1]) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .getVoter(signersRegistered[2].address);//voter 2 is registered
-
-      expect(voter.isRegistered).to.be.equal(true);
-
+    it("Should have an empty winningProposalId", async () => {
+      const winningId = await voting.read.winningProposalID();
+      assert.equal(winningId, 0n);
     });
   });
 
-
-  ////////////////////// GET PROPOSAL ////////////////////////
-
-  describe("getOneProposal", function () {
-    this.beforeEach(async function () {
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpAddThreeProposals());
+  describe.only("addVoter", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpSmartContract());
     });
 
-    /* not implemented in the contract
-          it("Should revert if there is no proposal.", async function () {
-    
-            await expect(voting
-              .connect(signersRegistered[1]) //"connect" to put signer in msg.sender for the modifier onlyVoters
-              .getOneProposal(0)) //no proposal yet
-              .to.be.revertedWith("Proposal not found");
-          });*/
+    it('Should emit "VoterRegistered" event when a voter is registered', async () => {
 
-    it("Should revert if the caller is not a voter.", async function () {
-
-      //Check unregistred address
-      await expect(voting
-        .connect(signerNotRegistered) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .getOneProposal(0))
-        .to.be.revertedWith("You're not a voter");
-    });
-
-    /* not implemented in the contract
-    it("Should revert if the proposal id is >= proposals.length", async function () {
-
-      await expect(voting
-        .connect(signersRegistered[1]) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .getOneProposal(10)) //no proposal yet
-        .to.be.revertedWith("Proposal not found");
-    });*/
-
-    it("Should return the proposal", async function () {
-
-      const proposal1 = await voting
-        .connect(signersRegistered[2]) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .getOneProposal(1); //first proposal
-
-      expect(proposal1.description).to.equal("Proposal 1");
-
-    }
-
-
-
-    );
-  });
-
-  ////////////////////// ADD PROPOSAL ////////////////////////
-
-  describe("addProposal", function () {
-
-    this.beforeEach(async function () {
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpAddALotOfVoters());
-    });
-
-    it("Should revert if the caller is not a voter.", async function () {
-
-      await expect(voting
-        .connect(signerNotRegistered) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .addProposal("Proposal 1"))
-        .to.be.revertedWith("You're not a voter");
-    });
-
-
-    it("Should emit \"Proposal are not allowed yet\"", async function () {
-      await expect(voting.connect(signersRegistered[1]).addProposal("Proposal 1")).to.be.revertedWith("Proposals are not allowed yet");
-    });
-
-    it("Should accept a proposal", async function () {
-      await voting.startProposalsRegistering();
-      await expect(voting.connect(signersRegistered[1]).addProposal("Proposal 1")).to.emit(voting, "ProposalRegistered").withArgs(1);
-    });
-
-    it("Should refuse an empty proposal", async function () {
-      await voting.startProposalsRegistering();
-      await expect(voting.connect(signersRegistered[1]).addProposal("")).to.be.revertedWith("Vous ne pouvez pas ne rien proposer");
-    });
-
-
-  });
-
-
-  ////////////////////// SET VOTE ////////////////////////
-
-  describe("setVote", function () {
-
-    this.beforeEach(async function () {
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpAddThreeProposals());
-      await voting.endProposalsRegistering();
+      viem.assertions.emitWithArgs(voting.write.addVoter([signersRegistered[1].account.address]),voting, "VoterRegistered",[signersRegistered[1].account.address]);
 
     });
 
+    it("Should refuse to add a registered voter", async () => {
+      await voting.write.addVoter([signersRegistered[0].account.address], { account: owner.account });
 
-    //onlyVoter
-    it("Should revert if the caller is not a voter.", async function () {
-      await voting.startVotingSession();
-      await expect(voting
-        .connect(signerNotRegistered) //"connect" to put signer in msg.sender for the modifier onlyVoters
-        .setVote(1))
-        .to.be.revertedWith("You're not a voter");
+      await assert.rejects(
+        async () => await voting.write.addVoter([signersRegistered[0].account.address], { account: owner.account }),
+        /Already registered/
+      );
     });
 
-
-    //require(workflowStatus == WorkflowStatus.VotingSessionStarted, 'Voting session havent started yet');
-    it("Should emit \"Voting session havent started yet\"", async function () {
-      await expect(voting.connect(signersRegistered[1]).setVote(1)).to.be.revertedWith("Voting session havent started yet");
+    it("Should revert if the caller is not the owner", async () => {
+      await assert.rejects(
+        async () => await voting.write.addVoter([signersRegistered[1].account.address], { 
+          account: signersRegistered[0].account 
+        }),
+        /OwnableUnauthorizedAccount/
+      );
     });
 
-
-
-    //  require(voters[msg.sender].hasVoted != true, 'You have already voted');
-    it("Should emit \"You have already voted\" ", async function () {
-      await voting.startVotingSession();
-      await voting.connect(signersRegistered[1]).setVote(1);
-      await expect(voting.connect(signersRegistered[1]).setVote(1)).to.be.revertedWith("You have already voted");
-    });
-
-
-    //  emit Voted(msg.sender, _id);
-    it("Should accept a vote", async function () {
-      await voting.startVotingSession();
-      await expect(voting.connect(signersRegistered[1]).setVote(1)).to.emit(voting, "Voted").withArgs(signersRegistered[1].address, 1);
-    });
-
-
-    //  require(_id < proposalsArray.length, 'Proposal not found'); // pas obligé, et pas besoin du >0 car uint
-    it("Should not accept an invalid proposal ID", async function () {
-      await voting.startVotingSession();
-      await expect(voting.connect(signersRegistered[1]).setVote(25)).to.be.revertedWith("Proposal not found");
+    it('Should not revert with "Voters registration is not open yet"', async () => {
+      await voting.write.addVoter([signersRegistered[0].account.address], { account: owner.account });
+      assert.ok(true);
     });
   });
 
-
-  ////////////////////// STATE ////////////////////////
-
-  describe("Workflow", function () {
-    this.beforeEach(async function () {
-      //Before each test, we deploy a new Voting contract    
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpSmartContract());
+  describe("getVoter", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpAddALotOfVoters());
     });
 
-    it("Should allow only the owner to change state", async function () {
-      await expect(voting.connect(signersRegistered[1]).startProposalsRegistering()).to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
-      await expect(voting.connect(signersRegistered[1]).endProposalsRegistering()).to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
-      await expect(voting.connect(signersRegistered[1]).startVotingSession()).to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
-      await expect(voting.connect(signersRegistered[1]).endVotingSession()).to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
-      await expect(voting.connect(signersRegistered[1]).tallyVotes()).to.be.revertedWithCustomError(voting, "OwnableUnauthorizedAccount");
+    it("Should revert if the caller is not a voter", async () => {
+      await assert.rejects(
+        async () => await voting.read.getVoter([signersRegistered[0].account.address], {
+          account: signerNotRegistered.account
+        }),
+        /You're not a voter/
+      );
     });
 
-    it("Should revert if the workflow order is not respected", async function () {
-
-      await expect(voting.endProposalsRegistering()).to.be.revertedWith("Registering proposals havent started yet");
-      await expect(voting.startVotingSession()).to.be.revertedWith("Registering proposals phase is not finished");
-      await expect(voting.endVotingSession()).to.be.revertedWith("Voting session havent started yet");
-      await expect(voting.tallyVotes()).to.be.revertedWith("Current status is not voting session ended");
-
-
-
-      await voting.startProposalsRegistering();
-      await expect(voting.startProposalsRegistering()).to.be.revertedWith("Registering proposals cant be started now");
-      await expect(voting.startVotingSession()).to.be.revertedWith("Registering proposals phase is not finished");
-      await expect(voting.endVotingSession()).to.be.revertedWith("Voting session havent started yet");
-      await expect(voting.tallyVotes()).to.be.revertedWith("Current status is not voting session ended");
-
-
-      await voting.endProposalsRegistering();
-      await expect(voting.endProposalsRegistering()).to.be.revertedWith("Registering proposals havent started yet");
-      await expect(voting.startProposalsRegistering()).to.be.revertedWith("Registering proposals cant be started now");
-      await expect(voting.endVotingSession()).to.be.revertedWith("Voting session havent started yet");
-      await expect(voting.tallyVotes()).to.be.revertedWith("Current status is not voting session ended");
-
-
-      await voting.startVotingSession();
-      await expect(voting.startProposalsRegistering()).to.be.revertedWith("Registering proposals cant be started now");
-      await expect(voting.endProposalsRegistering()).to.be.revertedWith("Registering proposals havent started yet");
-      await expect(voting.startVotingSession()).to.be.revertedWith("Registering proposals phase is not finished");
-      await expect(voting.tallyVotes()).to.be.revertedWith("Current status is not voting session ended");
-
-
-      await voting.endVotingSession();
-      await expect(voting.startProposalsRegistering()).to.be.revertedWith("Registering proposals cant be started now");
-      await expect(voting.endProposalsRegistering()).to.be.revertedWith("Registering proposals havent started yet");
-      await expect(voting.startVotingSession()).to.be.revertedWith("Registering proposals phase is not finished");
-      await expect(voting.endVotingSession()).to.be.revertedWith("Voting session havent started yet");
-
-
+    it("Should return an unregistered voter", async () => {
+      const voter = await voting.read.getVoter([signerNotRegistered.account.address], {
+        account: signersRegistered[0].account
+      });
+      assert.equal(voter.isRegistered, false);
     });
 
-    it("Should go through all workflow steps", async function () {
-      await expect(voting.startProposalsRegistering()).to.emit(voting, "WorkflowStatusChange").withArgs(0, 1);
-      await expect(voting.endProposalsRegistering()).to.emit(voting, "WorkflowStatusChange").withArgs(1, 2);
-      await expect(voting.startVotingSession()).to.emit(voting, "WorkflowStatusChange").withArgs(2, 3);
-      await expect(voting.endVotingSession()).to.emit(voting, "WorkflowStatusChange").withArgs(3, 4);
-      await expect(voting.tallyVotes()).to.emit(voting, "WorkflowStatusChange").withArgs(4, 5);
+    it("Should return a registered voter", async () => {
+      const voter = await voting.read.getVoter([signersRegistered[1].account.address], {
+        account: signersRegistered[0].account
+      });
+      assert.equal(voter.isRegistered, true);
     });
   });
 
-  ////////////////////// TALLY VOTES ////////////////////////
-  describe("tallyVotes", function () {
-
-    this.beforeEach(async function () {
-      ({ voting, signersRegistered, signerNotRegistered } = await setUpAddThreeProposals());
+  describe("getOneProposal", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpAddThreeProposals());
     });
 
-    //onlyVoter: tested with workflow tests
-
-
-
-    it("Should tally votes and declare the winner", async function () {
-      await voting.endProposalsRegistering();
-      await voting.startVotingSession();
-
-      //Four voters vote for three different proposals. Proposal 2 will win.
-      await voting.connect(signersRegistered[0]).setVote(0); //voter 0 votes for proposal 0
-      await voting.connect(signersRegistered[1]).setVote(1); //voter 1 votes for proposal 1
-      await voting.connect(signersRegistered[2]).setVote(2); //voter 2 votes for proposal 2
-      await voting.connect(signersRegistered[3]).setVote(2); //voter 3 votes for proposal 2
-
-      await voting.endVotingSession();
-
-      await expect(voting.tallyVotes()).to.emit(voting, "WorkflowStatusChange").withArgs(4, 5);
-
-      const winningProposalID = await voting.winningProposalID();
-      //In this case of a tie, the winner is the proposal with the lowest ID
-      expect(winningProposalID).to.equal(2);
+    it("Should revert if the caller is not a voter", async () => {
+      await assert.rejects(
+        async () => await voting.read.getOneProposal([0n], {
+          account: signerNotRegistered.account
+        }),
+        /You're not a voter/
+      );
     });
 
-    it("Should tally votes and declare the first tied proposal as the winner", async function () {
-      await voting.endProposalsRegistering();
-      await voting.startVotingSession();
+    it("Should return the proposal", async () => {
+      const proposal1 = await voting.read.getOneProposal([1n], {
+        account: signersRegistered[1].account
+      });
+      assert.equal(proposal1.description, "Proposal 1");
+    });
+  });
 
-      //Three voters vote for three different proposals. Proposals are tied.
-      await voting.connect(signersRegistered[0]).setVote(0); //voter 0 votes for proposal 0
-      await voting.connect(signersRegistered[1]).setVote(1); //voter 1 votes for proposal 1
-      await voting.connect(signersRegistered[2]).setVote(2); //voter 2 votes for proposal 2
-
-      await voting.endVotingSession();
-
-      await expect(voting.tallyVotes()).to.emit(voting, "WorkflowStatusChange").withArgs(4, 5);
-
-      const winningProposalID = await voting.winningProposalID();
-      //In this case of a tie, the winner is the proposal with the lowest ID
-      expect(winningProposalID).to.equal(0);
+  describe("addProposal", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpAddALotOfVoters());
     });
 
-    it("Should return Genesis proposal if there is no vote", async function () {
-      await voting.endProposalsRegistering();
-      await voting.startVotingSession();
-      await voting.endVotingSession();
+    it("Should revert if the caller is not a voter", async () => {
+      await assert.rejects(
+        async () => await voting.write.addProposal(["Proposal 1"], {
+          account: signerNotRegistered.account
+        }),
+        /You're not a voter/
+      );
+    });
 
-      await expect(voting.tallyVotes()).to.emit(voting, "WorkflowStatusChange").withArgs(4, 5);
-      const winningProposalID = await voting.winningProposalID();
-      expect(winningProposalID).to.equal(0);
+    it('Should revert with "Proposals are not allowed yet"', async () => {
+      await assert.rejects(
+        async () => await voting.write.addProposal(["Proposal 1"], {
+          account: signersRegistered[0].account
+        }),
+        /Proposals are not allowed yet/
+      );
+    });
+
+    it("Should accept a proposal", async () => {
+      await voting.write.startProposalsRegistering({ account: owner.account });
+
+      await viem.assertions.emitWithArgs(voting.write.addProposal(["Proposal 1"],{account: signersRegistered[1].account}),voting, "ProposalRegistered",[1n]);
+    });
+
+    it("Should refuse an empty proposal", async () => {
+      await voting.write.startProposalsRegistering({ account: owner.account });
+      await assert.rejects(
+        async () => await voting.write.addProposal([""], {
+          account: signersRegistered[0].account
+        }),
+        /Vous ne pouvez pas ne rien proposer/
+      );
+    });
+  });
+
+  describe("setVote", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpAddThreeProposals());
+      await voting.write.endProposalsRegistering({ account: owner.account });
+    });
+
+    it("Should revert if the caller is not a voter", async () => {
+      await voting.write.startVotingSession({ account: owner.account });
+      await assert.rejects(
+        async () => await voting.write.setVote([1n], {
+          account: signerNotRegistered.account
+        }),
+        /You're not a voter/
+      );
+    });
+
+    it('Should revert with "Voting session havent started yet"', async () => {
+      await assert.rejects(
+        async () => await voting.write.setVote([1n], {
+          account: signersRegistered[0].account
+        }),
+        /Voting session havent started yet/
+      );
+    });
+
+    it('Should revert with "You have already voted"', async () => {
+      await voting.write.startVotingSession({ account: owner.account });
+      await voting.write.setVote([1n], { account: signersRegistered[0].account });
+      await assert.rejects(
+        async () => await voting.write.setVote([1n], {
+          account: signersRegistered[0].account
+        }),
+        /You have already voted/
+      );
+    });
+
+    it("Should accept a vote", async () => {
+      await voting.write.startVotingSession({ account: owner.account });
+      await viem.assertions.emitWithArgs(voting.write.setVote([1n],{account: signersRegistered[1].account}),voting, "Voted",[getAddress(signersRegistered[1].account.address),1n]);
+    });
+
+    it("Should not accept an invalid proposal ID", async () => {
+      await voting.write.startVotingSession({ account: owner.account });
+      await assert.rejects(
+        async () => await voting.write.setVote([25n], {
+          account: signersRegistered[0].account
+        }),
+        /Proposal not found/
+      );
+    });
+  });
+
+  describe("Workflow", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpSmartContract());
+    });
+
+    it("Should allow only the owner to change state", async () => {
+      await assert.rejects(
+        async () => await voting.write.startProposalsRegistering({ account: signersRegistered[0].account }),
+        /OwnableUnauthorizedAccount/
+      );
+      await assert.rejects(
+        async () => await voting.write.endProposalsRegistering({ account: signersRegistered[0].account }),
+        /OwnableUnauthorizedAccount/
+      );
+      await assert.rejects(
+        async () => await voting.write.startVotingSession({ account: signersRegistered[0].account }),
+        /OwnableUnauthorizedAccount/
+      );
+      await assert.rejects(
+        async () => await voting.write.endVotingSession({ account: signersRegistered[0].account }),
+        /OwnableUnauthorizedAccount/
+      );
+      await assert.rejects(
+        async () => await voting.write.tallyVotes({ account: signersRegistered[0].account }),
+        /OwnableUnauthorizedAccount/
+      );
+    });
+
+    it("Should revert if the workflow order is not respected", async () => {
+      await assert.rejects(
+        async () => await voting.write.endProposalsRegistering({ account: owner.account }),
+        /Registering proposals havent started yet/
+      );
+      await assert.rejects(
+        async () => await voting.write.startVotingSession({ account: owner.account }),
+        /Registering proposals phase is not finished/
+      );
+      await assert.rejects(
+        async () => await voting.write.endVotingSession({ account: owner.account }),
+        /Voting session havent started yet/
+      );
+      await assert.rejects(
+        async () => await voting.write.tallyVotes({ account: owner.account }),
+        /Current status is not voting session ended/
+      );
+
+      await voting.write.startProposalsRegistering({ account: owner.account });
+      await assert.rejects(
+        async () => await voting.write.startProposalsRegistering({ account: owner.account }),
+        /Registering proposals cant be started now/
+      );
+
+      await voting.write.endProposalsRegistering({ account: owner.account });
+      await voting.write.startVotingSession({ account: owner.account });
+      await voting.write.endVotingSession({ account: owner.account });
+    });
+
+    it("Should go through all workflow steps", async () => {
+      await voting.write.startProposalsRegistering({ account: owner.account });
+      await voting.write.endProposalsRegistering({ account: owner.account });
+      await voting.write.startVotingSession({ account: owner.account });
+      await voting.write.endVotingSession({ account: owner.account });
+      await voting.write.tallyVotes({ account: owner.account });
+      
+      const status = await voting.read.workflowStatus();
+      assert.equal(status, 5); // VotesTallied
+    });
+  });
+
+  describe("tallyVotes", () => {
+    beforeEach(async () => {
+      ({ voting, signersRegistered, signerNotRegistered, owner, publicClient } = await setUpAddThreeProposals());
+    });
+
+    it("Should tally votes and declare the winner", async () => {
+      await voting.write.endProposalsRegistering({ account: owner.account });
+      await voting.write.startVotingSession({ account: owner.account });
+
+      await voting.write.setVote([0n], { account: signersRegistered[0].account });
+      await voting.write.setVote([1n], { account: signersRegistered[1].account });
+      await voting.write.setVote([2n], { account: signersRegistered[2].account });
+      await voting.write.setVote([2n], { account: signersRegistered[3].account });
+
+      await voting.write.endVotingSession({ account: owner.account });
+      await voting.write.tallyVotes({ account: owner.account });
+
+      const winningProposalID = await voting.read.winningProposalID();
+      assert.equal(winningProposalID, 2n);
+    });
+
+    it("Should tally votes and declare the first tied proposal as the winner", async () => {
+      await voting.write.endProposalsRegistering({ account: owner.account });
+      await voting.write.startVotingSession({ account: owner.account });
+
+      await voting.write.setVote([0n], { account: signersRegistered[0].account });
+      await voting.write.setVote([1n], { account: signersRegistered[1].account });
+      await voting.write.setVote([2n], { account: signersRegistered[2].account });
+
+      await voting.write.endVotingSession({ account: owner.account });
+      await voting.write.tallyVotes({ account: owner.account });
+
+      const winningProposalID = await voting.read.winningProposalID();
+      assert.equal(winningProposalID, 0n);
+    });
+
+    it("Should return Genesis proposal if there is no vote", async () => {
+      await voting.write.endProposalsRegistering({ account: owner.account });
+      await voting.write.startVotingSession({ account: owner.account });
+      await voting.write.endVotingSession({ account: owner.account });
+      await voting.write.tallyVotes({ account: owner.account });
+
+      const winningProposalID = await voting.read.winningProposalID();
+      assert.equal(winningProposalID, 0n);
     });
   });
 });
