@@ -6,13 +6,14 @@ import "hardhat/console.sol";
 
 contract Voting is Ownable {
 
+    uint public constant MAX_PROPOSALS = 100; //To avoid gas limit exceeded in tally votes
 
     uint public winningProposalID;
     
     struct Voter {
         bool isRegistered;
         bool hasVoted;
-        uint200 votedProposalId;
+        uint votedProposalId; //uint200 pour completer le slot
     }
 
     struct Proposal {
@@ -78,7 +79,8 @@ contract Voting is Ownable {
     function addProposal(string calldata _desc) external onlyVoters {
         require(workflowStatus == WorkflowStatus.ProposalsRegistrationStarted, 'Proposals are not allowed yet');
         require(keccak256(abi.encode(_desc)) != keccak256(abi.encode("")), 'Vous ne pouvez pas ne rien proposer'); // facultatif
-        // voir que desc est different des autres
+        require(proposalsArray.length < MAX_PROPOSALS, "Too many proposals");
+
 
         Proposal memory proposal;
         proposal.description = _desc;
@@ -89,7 +91,7 @@ contract Voting is Ownable {
 
     // ::::::::::::: VOTE ::::::::::::: //
 
-    function setVote( uint200 _id) external onlyVoters {
+    function setVote( uint _id) external onlyVoters {
         require(workflowStatus == WorkflowStatus.VotingSessionStarted, 'Voting session havent started yet');
         require(voters[msg.sender].hasVoted != true, 'You have already voted');
         require(_id < proposalsArray.length, 'Proposal not found'); // pas obligé, et pas besoin du >0 car uint
