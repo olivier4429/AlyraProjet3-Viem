@@ -1,18 +1,16 @@
 import { useReadContract } from 'wagmi'
-import { isAddressEqual } from 'viem'
+import { Address, isAddressEqual } from 'viem'
 import { votingAbi } from '../abi/voting'
-import { useAccount } from 'wagmi'
 
 
-export function useIsOwner() {
-   const { address, isConnected } = useAccount();
+export function useIsOwner(address?:Address) {
 
   const { data: owner } = useReadContract({
     abi: votingAbi,
     address: "0x5fbdb2315678afecb367f032d93f642f64180aa3",
     functionName: 'owner',
   })
-
+console.log(" ad=",address," ow=",owner)
   return Boolean(
     address &&
     owner &&
