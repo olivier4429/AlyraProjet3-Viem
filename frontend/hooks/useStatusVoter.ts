@@ -5,7 +5,6 @@ import { votingAbi } from '../abi/voting'
 
 export function useStatusVoter(address?: Address, queryNeeded?: boolean) {
 
-  console.log("addr=",address," query=",queryNeeded);
   const { data: voter } = useReadContract({
     abi: votingAbi,
     address: "0x5fbdb2315678afecb367f032d93f642f64180aa3",
@@ -15,7 +14,6 @@ export function useStatusVoter(address?: Address, queryNeeded?: boolean) {
       enabled: queryNeeded && Boolean(address), //Ne pas appeler si adress undefined.
     },
   })
- console.log("voter=",voter);
   return voter;
 }
 export default useStatusVoter;

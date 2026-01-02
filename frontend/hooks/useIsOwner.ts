@@ -9,8 +9,10 @@ export function useIsOwner(address?:Address) {
     abi: votingAbi,
     address: "0x5fbdb2315678afecb367f032d93f642f64180aa3",
     functionName: 'owner',
+    query:{
+      enabled : !!address,  //Ne pas appeler si l'adresse n'est pas renseignée.
+    }
   })
-console.log(" ad=",address," ow=",owner)
   return Boolean(
     address &&
     owner &&

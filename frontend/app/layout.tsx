@@ -8,7 +8,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <CustomRainbowKitProvider >{children}</CustomRainbowKitProvider >
+        <CustomRainbowKitProvider>{children}</CustomRainbowKitProvider >
       </body>
     </html>
   );
