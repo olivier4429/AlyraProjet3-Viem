@@ -1,13 +1,56 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { CONTRACT_ADDRESS, type WorkflowFunction, workflowLabels, WORKFLOW_FUNCTIONS } from "../constants";
 import { CONTRACT_ABI } from '../abi/voting'
-import { useMemo } from "react";
 import { useEffect } from "react";
-
+import { useOwner } from '../context/OwnerContext';  // Import du context
 
 export default function WorkflowManager() {
-    //  const [pendingAction, setPendingAction] = useState<WorkflowFunction | null>(null);
-    //  const [localWorkflow, setLocalWorkflow] = useState(0);
+    const {
+        isOwner,
+        isOwnerLoading,
+        isConnected
+    } = useOwner();
+
+    // Si pas connecté ou en chargement → on affiche rien ou un message
+    if (!isConnected) {
+        return (
+            <div style={{ border: "1px solid #ccc", padding: 16, borderRadius: 8 }}>
+                <h2>Workflow management</h2>
+                <p style={{ color: 'orange' }}>
+                    ⚠️ Connectez votre wallet pour accéder aux fonctions d'administration.
+                </p>
+            </div>
+        );
+    }
+
+    if (isOwnerLoading) {
+        return (
+            <div style={{ border: "1px solid #ccc", padding: 16, borderRadius: 8 }}>
+                <h2>Workflow management</h2>
+                <p>Vérification de vos droits d'administrateur...</p>
+            </div>
+        );
+    }
+
+    // Si connecté mais PAS owner → message d'accès refusé
+    if (!isOwner) {
+        return (
+            <div style={{ border: "1px solid #ccc", padding: 16, borderRadius: 8 }}>
+                <h2>Workflow management</h2>
+                <p style={{ color: 'red', fontWeight: 'bold' }}>
+                    ❌ Accès refusé : Vous n'êtes pas le propriétaire du contrat.
+                </p>
+            </div>
+        );
+    }
+
+
+
+
+
+
+
+
     /* ===== READ WORKFLOW STATUS ===== */
     const { data: workflowStatus, refetch } = useReadContract({
         address: CONTRACT_ADDRESS,
@@ -94,10 +137,10 @@ export default function WorkflowManager() {
                     ? workflowLabels[Number(workflowStatus)]
                     : "Loading..."}
             </p>
-            {isLoading && <p>Transaction pending...</p>}
+            {isLoading && <p style={{ color: 'blue' }}>Transaction en cours...</p>}
+            {isError && <p style={{ color: 'red' }}>Erreur : {error?.message}</p>}
 
-            {!isLoading && getActionButton()}<br />
-            {isError ? `❌ ${error?.message}` : ''}<br />
+            {!isLoading && getActionButton()}
         </div>
     );
 }
