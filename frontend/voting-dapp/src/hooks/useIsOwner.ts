@@ -1,10 +1,12 @@
 import { useReadContract } from 'wagmi'
 import { getAddress, isAddressEqual, type Address } from 'viem'
-import { votingAbi } from '../abi/voting'
+import { CONTRACT_ABI } from '../abi/voting'
+import { CONTRACT_ADDRESS } from "../constants";
+
 
 
 export function useIsOwner(address?: Address) {
-  const addressChecksum = getAddress("0x5FbDB2315678afecb367f032d93F642f64180aa3");
+  const addressChecksum = getAddress(CONTRACT_ADDRESS);
   const {
     data: owner,
     isLoading,
@@ -13,7 +15,7 @@ export function useIsOwner(address?: Address) {
     isSuccess,
     refetch // pour forcer un refresh manuel
   } = useReadContract({
-    abi: votingAbi,
+    abi: CONTRACT_ABI,
     address: addressChecksum,
     functionName: 'owner',
     query: {

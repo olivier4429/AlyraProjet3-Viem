@@ -1,4 +1,4 @@
-export const votingAbi = [
+export const CONTRACT_ABI = [
     {
         "inputs": [],
         "stateMutability": "payable",
