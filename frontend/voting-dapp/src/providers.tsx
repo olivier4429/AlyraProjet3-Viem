@@ -13,7 +13,8 @@ export default function CustomRainbowKitProvider({ children }: { children: React
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <OwnerProvider>{children}
+          <OwnerProvider> 
+            {children}
           </OwnerProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
