@@ -13,7 +13,7 @@ contract Voting is Ownable {
     struct Voter {
         bool isRegistered;
         bool hasVoted;
-        uint votedProposalId; //uint200 pour completer le slot
+        uint200 votedProposalId; //uint200 pour completer le slot
     }
 
     struct Proposal {
@@ -91,7 +91,7 @@ contract Voting is Ownable {
 
     // ::::::::::::: VOTE ::::::::::::: //
 
-    function setVote( uint _id) external onlyVoters {
+    function setVote( uint200 _id) external onlyVoters {
         require(workflowStatus == WorkflowStatus.VotingSessionStarted, 'Voting session havent started yet');
         require(voters[msg.sender].hasVoted != true, 'You have already voted');
         require(_id < proposalsArray.length, 'Proposal not found'); // pas obligé, et pas besoin du >0 car uint
