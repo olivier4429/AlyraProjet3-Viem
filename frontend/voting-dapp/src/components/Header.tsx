@@ -1,12 +1,13 @@
 import '@rainbow-me/rainbowkit/styles.css';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
-import type { Address } from 'viem';
-import type { Connector } from 'wagmi';
+import useIsOwner from '../hooks/useIsOwner'
 
 
-function DebugAccount({address, isConnected, connector, owner, isOwner, isLoading, isError, error}:{address:Address, isConnected:boolean, connector:Connector, owner:Address, isOwner:boolean, isLoading:boolean, isError:boolean, error:string}) {
-
+function DebugAccount() {
+    const { address, isConnected, connector } = useAccount();
+    const { owner, isOwner, isLoading, isError, error, refetch } = useIsOwner(address)
     return (
         <div style={{ background: '#f00', color: 'white', padding: '10px', margin: '10px' }}>
             <strong>DEBUG WAGMI:</strong><br />
@@ -23,12 +24,12 @@ function DebugAccount({address, isConnected, connector, owner, isOwner, isLoadin
 }
 
 
-export default function Header({address, isConnected, connector, owner, isOwner, isLoading, isError, error}:{address:Address, isConnected:boolean, connector:Connector, owner:Address, isOwner:boolean, isLoading:boolean, isError:boolean, error:string}) {
+export default function Header() {
+    const { address, isConnected } = useAccount();
 
     return (
         <div>
-            <DebugAccount address={address}/>
-            Header :
+            {/*<DebugAccount />*/} 
             {isConnected ? (
                 <p>Connected with {address}</p>
             ) : (

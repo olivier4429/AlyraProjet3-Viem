@@ -3,9 +3,9 @@ npm create vite@latest voting-dapp -- --template react-ts
 cd .\voting-dapp\
 npm install   wagmi@^2.9.0   @rainbow-me/rainbowkit@^2.2.10   viem   @tanstack/react-query
 
+https://ui.shadcn.com/docs/installation/vite
 
-
-
+Pour déployer : npx hardhat run .\scripts\deployVoting.ts --network localhost
 
 
 

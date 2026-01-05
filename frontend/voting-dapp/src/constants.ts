@@ -19,3 +19,4 @@ export const workflowLabels = [
   "Voting session ended",
   "Votes tallied",
 ];
+

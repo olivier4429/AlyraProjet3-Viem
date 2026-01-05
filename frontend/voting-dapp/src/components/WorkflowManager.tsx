@@ -3,58 +3,33 @@ import { CONTRACT_ADDRESS, type WorkflowFunction, workflowLabels, WORKFLOW_FUNCT
 import { CONTRACT_ABI } from '../abi/voting'
 import { useEffect } from "react";
 import { useOwner } from '../context/OwnerContext';  // Import du context
+import { Button } from "@/components/ui/button"
+import CustomMessageCard from "@/components/CustomMessageCard"
 import {
     Card,
-    CardAction,
     CardContent,
     CardDescription,
     CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-
-function WorkflowMessageCard({ children }: { children: React.ReactNode }) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Workflow management</CardTitle>
-            </CardHeader>
-            <CardContent>{children}</CardContent>
-        </Card>
-    );
-}
-
 export default function WorkflowManager() {
+
+    const TITLE = "gestion du workflow";
     const {
         isOwner,
         isOwnerLoading,
         isConnected
     } = useOwner();
 
-    // Si pas connecté ou en chargement → on affiche rien ou un message
-    if (!isConnected) {
-        return (
-            <WorkflowMessageCard>
-                ⚠️ Connectez votre wallet pour accéder aux fonctions d'administration.
-            </WorkflowMessageCard>
-        );
-    }
 
-    if (isOwnerLoading) {
-        return (
-            <WorkflowMessageCard>
-                Vérification de vos droits d'administrateur...
-            </WorkflowMessageCard>
-
-        );
-    }
 
     // Si connecté mais PAS owner → message d'accès refusé
     if (!isOwner) {
         return (
-            <WorkflowMessageCard>
+            <CustomMessageCard title={TITLE}>
                 ❌ Accès refusé : Vous n'êtes pas le propriétaire du contrat.
-            </WorkflowMessageCard>
+            </CustomMessageCard>
         );
     }
 
@@ -123,10 +98,33 @@ export default function WorkflowManager() {
         ? WORKFLOW_ACTIONS[Number(workflowStatus)]
         : undefined;
 
+
+
+    // Si pas connecté ou en chargement → on affiche rien ou un message
+    if (!isConnected) {
+        return (
+            <CustomMessageCard title={TITLE}>
+                ⚠️ Connectez votre wallet pour accéder aux fonctions d'administration.
+            </CustomMessageCard>
+        );
+    }
+
+    if (isOwnerLoading) {
+        return (
+            <CustomMessageCard title={TITLE}>
+                Vérification de vos droits d'administrateur...
+            </CustomMessageCard>
+
+        );
+    }
+
+
+
     return (
         <Card className="w-full max-w-sm">
             <CardHeader>
                 <CardTitle>Workflow management</CardTitle>
+                <CardDescription>Faire avancer le workflow</CardDescription>
             </CardHeader>
             <CardContent>
                 <p><strong>Current status :</strong>{" "}
@@ -137,9 +135,9 @@ export default function WorkflowManager() {
             </CardContent>
             <CardFooter className="flex-col gap-2">
                 {!isLoading && action && (
-                    <button  className="w-full" onClick={() => advanceWorkflow(action.fn)}>
+                    <Button variant="default" className="w-full" onClick={() => advanceWorkflow(action.fn)}>
                         {action.label}
-                    </button>
+                    </Button>
                 )}
                 {!isLoading && !action && <p>Workflow completed</p>}
                 {isLoading && <p style={{ color: 'blue' }}>Transaction en cours...</p>}
