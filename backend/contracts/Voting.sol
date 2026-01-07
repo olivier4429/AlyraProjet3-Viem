@@ -66,7 +66,7 @@ keccak256(N)  → base
         WorkflowStatus newStatus
     );
     event ProposalRegistered(uint proposalId);
-    event Voted(address voter, uint proposalId);
+    event Voted(address voter, uint128 proposalId);
 
     constructor() payable Ownable(msg.sender) {}
 
@@ -86,7 +86,7 @@ keccak256(N)  → base
     }
 
     function getOneProposal(
-        uint _id
+        uint128 _id
     ) external view onlyVoters returns (Proposal memory) {
         return proposalsArray[_id];
     }
