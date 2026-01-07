@@ -1,5 +1,5 @@
 export const CONTRACT_ABI = [
-    {
+{
       "inputs": [],
       "stateMutability": "payable",
       "type": "constructor"
@@ -69,9 +69,9 @@ export const CONTRACT_ABI = [
         },
         {
           "indexed": false,
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "proposalId",
-          "type": "uint256"
+          "type": "uint128"
         }
       ],
       "name": "Voted",
@@ -165,9 +165,9 @@ export const CONTRACT_ABI = [
     {
       "inputs": [
         {
-          "internalType": "uint256",
+          "internalType": "uint128",
           "name": "_id",
-          "type": "uint256"
+          "type": "uint128"
         }
       ],
       "name": "getOneProposal",
@@ -322,4 +322,5 @@ export const CONTRACT_ABI = [
       "stateMutability": "view",
       "type": "function"
     }
+ 
 ] as const
