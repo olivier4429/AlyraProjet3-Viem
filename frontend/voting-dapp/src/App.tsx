@@ -23,10 +23,10 @@ function App() {
             <AddProposal />
           </div>
           
-          {/* Section Propositions
+          {/* Section Propositions */}
           <div className="w-full">
             <ProposalsList />
-          </div> */}
+          </div>
           
           {/* Section Admin - Gestion du workflow */}
           <div className="w-full">
