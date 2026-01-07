@@ -1,8 +1,8 @@
-import { useReadContract, useAccount } from "wagmi";
-import { CONTRACT_ADDRESS } from "../constants";
-import { CONTRACT_ABI } from '../abi/voting';
-import { useOwner } from '../contexts/OwnerContext';
-import CustomMessageCard from "@/components/CustomMessageCard";
+import { useReadContract } from "wagmi";
+import { CONTRACT_ADDRESS } from "@/constants";
+import { CONTRACT_ABI } from '@/abi/voting';
+import { useApp } from '@/contexts/AppContext';
+import CustomMessageCard from "@/components/shared/CustomMessageCard";
 import { type Proposal } from "@/types";
 import {
     Card,
@@ -11,36 +11,25 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import useStatusVoter from "@/hooks/useStatusVoter";
-
-
 
 export default function ProposalsList() {
     const TITLE = "Liste des propositions";
-    const { isConnected } = useOwner();
-    const { address } = useAccount();
+    const { isConnected, isVoter, workflowStatus } = useApp();
 
-    const  voterInfo  =useStatusVoter();
-
-    /* ===== READ WORKFLOW STATUS ===== */
-    const { data: workflowStatus } = useReadContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: "workflowStatus",
-    });
-
-    /* ===== FETCH PROPOSALS ===== */
-    // On essaie de récupérer jusqu'à 100 propositions (MAX_PROPOSALS)
+    // Fetch proposals (0 à 99)
     const proposalQueries = Array.from({ length: 100 }, (_, i) =>
         useReadContract({
             address: CONTRACT_ADDRESS,
             abi: CONTRACT_ABI,
             functionName: "getOneProposal",
             args: [BigInt(i)],
+            query: {
+                enabled: isConnected && isVoter,
+            },
         })
     );
 
-    /* ===== CHECKS ===== */
+    // Vérifications
     if (!isConnected) {
         return (
             <CustomMessageCard title={TITLE}>
@@ -48,8 +37,6 @@ export default function ProposalsList() {
             </CustomMessageCard>
         );
     }
-
-    const isVoter = voterInfo && (voterInfo as any).isRegistered;
 
     if (!isVoter) {
         return (
@@ -67,8 +54,9 @@ export default function ProposalsList() {
         }))
         .filter((p) => p.description !== undefined);
 
-    const isVotingPhase = workflowStatus === 3; // VotingSessionStarted
-    const isVotingEnded = workflowStatus && workflowStatus >= 4; // VotingSessionEnded or VotesTallied
+    const isVotingPhase = workflowStatus === 3;
+    const isVotingEnded = workflowStatus && workflowStatus >= 4;
+    const showVoteCounts = isVotingPhase || isVotingEnded;
 
     return (
         <Card className="w-full max-w-2xl">
@@ -106,7 +94,7 @@ export default function ProposalsList() {
                                             {proposal.description}
                                         </p>
                                     </div>
-                                    {(isVotingPhase || isVotingEnded) && (
+                                    {showVoteCounts && (
                                         <div className="text-right">
                                             <div className="text-2xl font-bold text-blue-600">
                                                 {proposal.voteCount.toString()}

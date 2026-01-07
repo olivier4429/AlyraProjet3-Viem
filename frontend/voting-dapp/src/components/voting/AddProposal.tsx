@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from "wagmi";
-import { CONTRACT_ADDRESS } from "../constants";
-import { CONTRACT_ABI } from '../abi/voting';
-import { useOwner } from '../contexts/OwnerContext';
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { CONTRACT_ADDRESS, WORKFLOW_STATUS } from "@/constants";
+import { CONTRACT_ABI } from '@/abi/voting';
+import { useApp } from '@/contexts/AppContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import CustomMessageCard from "@/components/CustomMessageCard";
+import CustomMessageCard from "@/components/shared/CustomMessageCard";
 import {
     Card,
     CardContent,
@@ -14,36 +14,27 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import useStatusVoter from "@/hooks/useStatusVoter";
-import { type Voter} from "@/types"
-
 
 export default function AddProposal() {
     const TITLE = "Enregistrer une proposition";
     const [description, setDescription] = useState("");
 
-    const { isConnected } = useOwner();
-    const { address } = useAccount();
-    const  voterInfo  =useStatusVoter();
- 
+    const { isConnected, isVoter, workflowStatus, refetchAll } = useApp();
 
-    /* ===== WRITE CONTRACT ===== */
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
-
-    const { isSuccess: isConfirmed, isLoading: isMining } = useWaitForTransactionReceipt({
-        hash,
-    });
+    const { isSuccess: isConfirmed, isLoading: isMining } = useWaitForTransactionReceipt({ hash });
 
     const isLoading = isPending || isMining;
+    const isProposalPhase = workflowStatus === WORKFLOW_STATUS.ProposalsRegistrationStarted;
 
-    /* ===== Reset form after success ===== */
+    // Reset form et refetch après succès
     useEffect(() => {
         if (isConfirmed) {
             setDescription("");
+            refetchAll();
         }
-    }, [isConfirmed]);
+    }, [isConfirmed, refetchAll]);
 
-    /* ===== SUBMIT PROPOSAL ===== */
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -59,7 +50,7 @@ export default function AddProposal() {
         });
     };
 
-    /* ===== CHECKS ===== */
+    // Vérifications
     if (!isConnected) {
         return (
             <CustomMessageCard title={TITLE}>
@@ -67,9 +58,6 @@ export default function AddProposal() {
             </CustomMessageCard>
         );
     }
-
-    const isVoter = voterInfo && (voterInfo as Voter).isRegistered;
-    //const isProposalPhase = workflowStatus === 1; // ProposalsRegistrationStarted
 
     if (!isVoter) {
         return (
@@ -79,14 +67,14 @@ export default function AddProposal() {
         );
     }
 
- /*   if (!isProposalPhase) {
+    if (!isProposalPhase) {
         return (
             <CustomMessageCard title={TITLE}>
                 ⏸️ La phase d'enregistrement des propositions n'est pas active.
             </CustomMessageCard>
         );
     }
-*/
+
     return (
         <Card className="w-full max-w-sm">
             <CardHeader>

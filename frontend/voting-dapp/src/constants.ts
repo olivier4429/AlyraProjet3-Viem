@@ -18,16 +18,14 @@ export const WORKFLOW_STATUS = {
   VotingSessionEnded: 4,
   VotesTallied: 5,
 } as const;
-export type WorkflowStatus = typeof WORKFLOW_STATUS[keyof typeof WORKFLOW_STATUS] ;
 
-
+export type WorkflowStatusValue = typeof WORKFLOW_STATUS[keyof typeof WORKFLOW_STATUS];
 
 export const WORKFLOW_LABELS = [
-  "Registering voters",
-  "Proposals registration started",
-  "Proposals registration ended",
-  "Voting session started",
-  "Voting session ended",
-  "Votes tallied",
-];
-
+  "Enregistrement des voteurs",
+  "Enregistrement des propositions",
+  "Enregistrement des propositions terminé",
+  "Session de vote",
+  "Session de vote terminée",
+  "Votes comptabilisés",
+] as const;

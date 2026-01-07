@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { isAddress } from "viem"; // Utilitaire de viem pour valider l'adresse
-import { useOwner } from '../contexts/OwnerContext';  // Import du context
-import { CONTRACT_ADDRESS } from "../constants";
-import { CONTRACT_ABI } from '../abi/voting';
+import { isAddress } from "viem";
+import { useApp } from '@/contexts/AppContext';
+import { CONTRACT_ADDRESS, WORKFLOW_STATUS } from "@/constants";
+import { CONTRACT_ABI } from '@/abi/voting';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, UserPlus } from "lucide-react"; // Icônes
-
-import CustomMessageCard from "@/components/CustomMessageCard"
+import { Loader2, UserPlus } from "lucide-react";
+import CustomMessageCard from "@/components/shared/CustomMessageCard";
 import {
     Card,
     CardContent,
@@ -16,41 +15,24 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
-export default function AddVoter() {
+} from "@/components/ui/card";
 
+export default function AddVoter() {
     const TITLE = "Enregistrement des voteurs";
-    const {
-        isOwner,
-        isOwnerLoading,
-        isConnected
-    } = useOwner();
+    const { isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
     
     const [address, setAddress] = useState("");
 
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-        hash,
-    });
-    // Si pas connecté ou en chargement → on affiche rien ou un message
-    if (!isConnected) {
-        return (
-            <CustomMessageCard title={TITLE}>
-                ⚠️ Connectez votre wallet pour accéder aux fonctions d'administration.
-            </CustomMessageCard>
-        );
-    }
-
-    if (isOwnerLoading) {
-        return (
-            <CustomMessageCard title={TITLE}>
-                Vérification de vos droits d'administrateur...
-            </CustomMessageCard>
-
-        );
-    }
-
+    // Refetch après succès
+    useEffect(() => {
+        if (isSuccess) {
+            setAddress("");
+            refetchAll();
+        }
+    }, [isSuccess, refetchAll]);
 
     const handleAddVoter = () => {
         if (!isAddress(address)) {
@@ -66,12 +48,35 @@ export default function AddVoter() {
         });
     };
 
+    // Vérifications
+    if (!isConnected) {
+        return (
+            <CustomMessageCard title={TITLE}>
+                ⚠️ Connectez votre wallet pour accéder aux fonctions d'administration.
+            </CustomMessageCard>
+        );
+    }
 
-    // Si connecté mais PAS owner → message d'accès refusé
+    if (isOwnerLoading) {
+        return (
+            <CustomMessageCard title={TITLE}>
+                Vérification de vos droits d'administrateur...
+            </CustomMessageCard>
+        );
+    }
+
     if (!isOwner) {
         return (
             <CustomMessageCard title={TITLE}>
                 ❌ Accès refusé : Vous n'êtes pas le propriétaire du contrat.
+            </CustomMessageCard>
+        );
+    }
+
+    if (workflowStatus !== WORKFLOW_STATUS.RegisteringVoters) {
+        return (
+            <CustomMessageCard title={TITLE}>
+                ⏸️ L'enregistrement des voteurs n'est possible qu'en phase initiale.
             </CustomMessageCard>
         );
     }
@@ -123,10 +128,14 @@ export default function AddVoter() {
 
                 {isSuccess && (
                     <p className="text-sm text-green-600 font-medium">
-                        L'adresse a été ajoutée avec succès !
+                        ✓ L'adresse a été ajoutée avec succès !
                     </p>
                 )}
-                {isError && <p style={{ color: 'red' }}>Erreur : {error?.message}</p>}
+                {isError && (
+                    <p className="text-sm text-red-600">
+                        Erreur : {error?.message}
+                    </p>
+                )}
             </CardFooter>
         </Card>
     );
