@@ -1,8 +1,8 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { CONTRACT_ADDRESS, type WorkflowFunction, workflowLabels, WORKFLOW_FUNCTIONS } from "../constants";
+import { CONTRACT_ADDRESS, type WorkflowFunction, WORKFLOW_FUNCTIONS, WORKFLOW_STATUS, WORKFLOW_LABELS } from "../constants";
 import { CONTRACT_ABI } from '../abi/voting'
 import { useEffect } from "react";
-import { useOwner } from '../context/OwnerContext';  // Import du context
+import { useOwner } from '../contexts/OwnerContext';  // Import du context
 import { Button } from "@/components/ui/button"
 import CustomMessageCard from "@/components/CustomMessageCard"
 import {
@@ -23,6 +23,31 @@ export default function WorkflowManager() {
     } = useOwner();
 
 
+    /* ===== READ WORKFLOW STATUS ===== */
+    const { data: workflowStatus, refetch } = useReadContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "workflowStatus",
+        query: {
+            enabled: isOwner, // N'appelle que si propriétaire
+        },
+    });
+
+
+    /* ===== WRITE CONTRACT ===== */
+    const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
+
+    const { isSuccess: isConfirmed, isLoading: isMining } = useWaitForTransactionReceipt({
+        hash,
+    });
+
+
+    /* ===== Rafraîchir après confirmation ===== */
+    useEffect(() => {
+        if (isConfirmed) {
+            refetch();
+        }
+    }, [isConfirmed, refetch]);
 
     // Si connecté mais PAS owner → message d'accès refusé
     if (!isOwner) {
@@ -33,28 +58,11 @@ export default function WorkflowManager() {
         );
     }
 
-    /* ===== READ WORKFLOW STATUS ===== */
-    const { data: workflowStatus, refetch } = useReadContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: "workflowStatus",
-    });
 
-    /* ===== WRITE CONTRACT ===== */
-    const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
 
-    const { isSuccess: isConfirmed, isLoading: isMining } = useWaitForTransactionReceipt({
-        hash,
-    });
 
     const isLoading = isPending || isMining;
 
-    /* ===== Rafraîchir après confirmation ===== */
-    useEffect(() => {
-        if (isConfirmed) {
-            refetch();
-        }
-    }, [isConfirmed, refetch]);
 
     /* ===== ACTIONS ===== */
     const advanceWorkflow = (functionName: WorkflowFunction) => {
@@ -72,24 +80,24 @@ export default function WorkflowManager() {
         label: string;
         fn: WorkflowFunction;
     }> = {
-        0: {
-            label: "Start proposals registration",
+        [WORKFLOW_STATUS.RegisteringVoters]: {
+            label: WORKFLOW_LABELS[WORKFLOW_STATUS.ProposalsRegistrationStarted],
             fn: WORKFLOW_FUNCTIONS.START_PROPOSALS,
         },
-        1: {
-            label: "End proposals registration",
+        [WORKFLOW_STATUS.ProposalsRegistrationStarted]: {
+            label: WORKFLOW_LABELS[WORKFLOW_STATUS.ProposalsRegistrationEnded],
             fn: WORKFLOW_FUNCTIONS.END_PROPOSALS,
         },
-        2: {
-            label: "Start voting session",
+        [WORKFLOW_STATUS.ProposalsRegistrationEnded]: {
+            label: WORKFLOW_LABELS[WORKFLOW_STATUS.VotingSessionStarted],
             fn: WORKFLOW_FUNCTIONS.START_VOTING,
         },
-        3: {
-            label: "End voting session",
+        [WORKFLOW_STATUS.VotingSessionStarted]: {
+            label: WORKFLOW_LABELS[WORKFLOW_STATUS.VotingSessionEnded],
             fn: WORKFLOW_FUNCTIONS.END_VOTING,
         },
-        4: {
-            label: "Tally votes",
+        [WORKFLOW_STATUS.VotingSessionEnded]: {
+            label: WORKFLOW_LABELS[WORKFLOW_STATUS.VotesTallied],
             fn: WORKFLOW_FUNCTIONS.TALLY,
         },
     };
@@ -127,11 +135,11 @@ export default function WorkflowManager() {
                 <CardDescription>Faire avancer le workflow</CardDescription>
             </CardHeader>
             <CardContent>
-                <p><strong>Current status :</strong>{" "}
+                <div><strong>Current status :</strong>{" "}
                     <p>status ={workflowStatus} </p>
                     {workflowStatus !== undefined
-                        ? workflowLabels[Number(workflowStatus)]
-                        : "Loading..."}</p>
+                        ? WORKFLOW_LABELS[Number(workflowStatus)]
+                        : "Loading..."}</div>
             </CardContent>
             <CardFooter className="flex-col gap-2">
                 {!isLoading && action && (

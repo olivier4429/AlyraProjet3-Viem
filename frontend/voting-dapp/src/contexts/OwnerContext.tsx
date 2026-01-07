@@ -1,4 +1,4 @@
-// src/context/OwnerContext.tsx
+
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAccount } from 'wagmi';
 import useIsOwner from '../hooks/useIsOwner';

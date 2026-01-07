@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { isAddress } from "viem"; // Utilitaire de viem pour valider l'adresse
-import { useOwner } from '../context/OwnerContext';  // Import du context
+import { useOwner } from '../contexts/OwnerContext';  // Import du context
 import { CONTRACT_ADDRESS } from "../constants";
 import { CONTRACT_ABI } from '../abi/voting';
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,14 @@ export default function AddVoter() {
         isOwnerLoading,
         isConnected
     } = useOwner();
+    
+    const [address, setAddress] = useState("");
 
+    const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
+
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+        hash,
+    });
     // Si pas connecté ou en chargement → on affiche rien ou un message
     if (!isConnected) {
         return (
@@ -43,13 +50,7 @@ export default function AddVoter() {
 
         );
     }
-    const [address, setAddress] = useState("");
 
-    const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
-
-    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-        hash,
-    });
 
     const handleAddVoter = () => {
         if (!isAddress(address)) {

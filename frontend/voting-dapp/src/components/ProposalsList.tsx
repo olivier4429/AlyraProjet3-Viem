@@ -1,8 +1,9 @@
 import { useReadContract, useAccount } from "wagmi";
 import { CONTRACT_ADDRESS } from "../constants";
 import { CONTRACT_ABI } from '../abi/voting';
-import { useOwner } from '../context/OwnerContext';
+import { useOwner } from '../contexts/OwnerContext';
 import CustomMessageCard from "@/components/CustomMessageCard";
+import { type Proposal } from "@/types";
 import {
     Card,
     CardContent,
@@ -10,24 +11,16 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import useStatusVoter from "@/hooks/useStatusVoter";
 
-interface Proposal {
-    description: string;
-    voteCount: bigint;
-}
+
 
 export default function ProposalsList() {
     const TITLE = "Liste des propositions";
     const { isConnected } = useOwner();
     const { address } = useAccount();
 
-    /* ===== READ VOTER INFO ===== */
-    const { data: voterInfo } = useReadContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: "getVoter",
-        args: address ? [address] : undefined,
-    });
+    const  voterInfo  =useStatusVoter();
 
     /* ===== READ WORKFLOW STATUS ===== */
     const { data: workflowStatus } = useReadContract({

@@ -8,10 +8,21 @@ export const WORKFLOW_FUNCTIONS = {
   TALLY: "tallyVotes",
 } as const;
 
-export type WorkflowFunction =
-  typeof WORKFLOW_FUNCTIONS[keyof typeof WORKFLOW_FUNCTIONS];
+export type WorkflowFunction = typeof WORKFLOW_FUNCTIONS[keyof typeof WORKFLOW_FUNCTIONS];
 
-export const workflowLabels = [
+export const WORKFLOW_STATUS = {
+  RegisteringVoters: 0,
+  ProposalsRegistrationStarted: 1,
+  ProposalsRegistrationEnded: 2,
+  VotingSessionStarted: 3,
+  VotingSessionEnded: 4,
+  VotesTallied: 5,
+} as const;
+export type WorkflowStatus = typeof WORKFLOW_STATUS[keyof typeof WORKFLOW_STATUS] ;
+
+
+
+export const WORKFLOW_LABELS = [
   "Registering voters",
   "Proposals registration started",
   "Proposals registration ended",

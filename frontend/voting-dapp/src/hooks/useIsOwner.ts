@@ -22,19 +22,7 @@ export function useIsOwner(address?: Address) {
       enabled: !!address,  //Ne pas appeler si l'adresse n'est pas renseignée.
     }
   })
-  // Logs pour debug direct dans la console
-  console.log('🔍 useReadContract owner:', {
-    owner,
-    isLoading,
-    isSuccess,
-    isError,
-    error: error?.message || error
-  })
-  /*return Boolean(
-    address &&
-    owner &&
-    isAddressEqual(address, owner)
-  )*/
+
   // Retourne l'owner pour l'instant (comme tu fais déjà)
   return {
     owner,
@@ -42,6 +30,7 @@ export function useIsOwner(address?: Address) {
     isLoading,
     isError,
     error,
+    isSuccess,
     refetch // utile pour tester manuellement
   }
 }

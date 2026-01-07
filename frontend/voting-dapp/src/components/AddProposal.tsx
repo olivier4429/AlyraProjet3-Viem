@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from "wagmi";
 import { CONTRACT_ADDRESS } from "../constants";
 import { CONTRACT_ABI } from '../abi/voting';
-import { useOwner } from '../context/OwnerContext';
+import { useOwner } from '../contexts/OwnerContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CustomMessageCard from "@/components/CustomMessageCard";
@@ -14,27 +14,18 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import useStatusVoter from "@/hooks/useStatusVoter";
+import { type Voter} from "@/types"
+
 
 export default function AddProposal() {
     const TITLE = "Enregistrer une proposition";
     const [description, setDescription] = useState("");
 
     const { isConnected } = useOwner();
-
-    /* ===== READ WORKFLOW STATUS ===== */
-    const { data: workflowStatus } = useReadContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: "workflowStatus",
-    });
-
-    /* ===== READ VOTER INFO ===== */
-    const { data: voterInfo } = useReadContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: "getVoter",
-        args: [isConnected ? (window as any).ethereum?.selectedAddress : "0x0"],
-    });
+    const { address } = useAccount();
+    const  voterInfo  =useStatusVoter();
+ 
 
     /* ===== WRITE CONTRACT ===== */
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
@@ -55,7 +46,7 @@ export default function AddProposal() {
     /* ===== SUBMIT PROPOSAL ===== */
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!description.trim()) {
             return;
         }
@@ -77,8 +68,8 @@ export default function AddProposal() {
         );
     }
 
-    const isVoter = voterInfo && (voterInfo as any).isRegistered;
-    const isProposalPhase = workflowStatus === 1; // ProposalsRegistrationStarted
+    const isVoter = voterInfo && (voterInfo as Voter).isRegistered;
+    //const isProposalPhase = workflowStatus === 1; // ProposalsRegistrationStarted
 
     if (!isVoter) {
         return (
@@ -88,14 +79,14 @@ export default function AddProposal() {
         );
     }
 
-    if (!isProposalPhase) {
+ /*   if (!isProposalPhase) {
         return (
             <CustomMessageCard title={TITLE}>
                 ⏸️ La phase d'enregistrement des propositions n'est pas active.
             </CustomMessageCard>
         );
     }
-
+*/
     return (
         <Card className="w-full max-w-sm">
             <CardHeader>
@@ -121,9 +112,9 @@ export default function AddProposal() {
                     </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                    <Button 
-                        type="submit" 
-                        variant="default" 
+                    <Button
+                        type="submit"
+                        variant="default"
                         className="w-full"
                         disabled={isLoading || !description.trim()}
                     >

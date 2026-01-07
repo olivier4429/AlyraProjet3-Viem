@@ -56,7 +56,7 @@ keccak256(N)  → base
 */
     Proposal[] proposalsArray;
 
-    //1 slot pour la racine du mapping puis 1 slot par Voter: 
+    //1 slot pour la racine du mapping puis 1 slot par Voter:
     //Un mapping consomme toujours 1 slot fixe, puis au moins 1 slot par valeur (si bien packée).
     mapping(address => Voter) voters;
 
@@ -99,9 +99,15 @@ keccak256(N)  → base
             workflowStatus == WorkflowStatus.RegisteringVoters,
             "Voters registration is not open yet"
         );
-        require(voters[_addr].isRegistered != true, "Already registered");
+        require(!voters[_addr].isRegistered, "Already registered");
 
-        voters[_addr].isRegistered = true;
+        //pb d'estimation du gas avec cette ligne : voters[_addr].isRegistered = true;
+        //ilvaut mieux mettre:
+        voters[_addr] = Voter({
+            isRegistered: true,
+            hasVoted: false,
+            votedProposalId: 0
+        });
         emit VoterRegistered(_addr);
     }
 

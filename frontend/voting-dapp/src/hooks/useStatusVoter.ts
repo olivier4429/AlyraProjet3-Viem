@@ -2,9 +2,11 @@ import { useReadContract } from 'wagmi'
 import { CONTRACT_ABI } from '../abi/voting'
 import { CONTRACT_ADDRESS } from "../constants";
 import { getAddress, type Address } from 'viem';
+import { type Voter } from '@/types';
 
 
-export function useStatusVoter(address?: Address, queryNeeded?: boolean) {
+
+export function useStatusVoter(address?: Address, queryNeeded?: boolean): Voter | undefined  {
   const addressChecksum = getAddress(CONTRACT_ADDRESS);
   const { data: voter } = useReadContract({
     abi: CONTRACT_ABI,
@@ -15,6 +17,6 @@ export function useStatusVoter(address?: Address, queryNeeded?: boolean) {
       enabled: queryNeeded && Boolean(address), //Ne pas appeler si adress undefined.
     },
   })
-  return voter;
+  return voter as Voter | undefined;
 }
 export default useStatusVoter;
