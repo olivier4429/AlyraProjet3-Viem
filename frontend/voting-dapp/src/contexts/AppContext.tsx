@@ -4,28 +4,30 @@ import { useReadContract } from 'wagmi';
 import { CONTRACT_ADDRESS, WORKFLOW_LABELS, WORKFLOW_STATUS } from '../constants';
 import { CONTRACT_ABI } from '@/abi/voting';
 import { type Voter } from '@/types';
-import useIsOwner from '@/hooks/useIsOwner';
+import useOwner from '@/hooks/useOwner';
+import useWorkflowStatus from '@/hooks/useWorkflowStatus';
+import useVoter from '@/hooks/useVoter';
 
 interface AppContextType {
   // Connexion
   address: string | undefined;
   isConnected: boolean;
-  
+
   // Owner
   isOwner: boolean;
   isOwnerLoading: boolean;
   ownerAddress: string | undefined;
-  
+
   // Voter
   voterInfo: Voter | undefined;
   isVoter: boolean;
   isVoterLoading: boolean;
-  
+
   // Workflow
   workflowStatus: number | undefined;
   workflowLabel: string;
   isWorkflowLoading: boolean;
-  
+
   // Actions
   refetchAll: () => void;
 }
@@ -33,50 +35,44 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { address, isConnected } = useAccount();
-  
+  const { address:addressConnected, isConnected } = useAccount();
+
   // Owner info
   const {
     owner,
     isOwner,
     isLoading: isOwnerLoading,
     refetch: refetchOwner,
-  } = useIsOwner(address);
-  
-    // Workflow status
+  } = useOwner(addressConnected);
+
+  // Workflow status
   const {
-    data: workflowStatus,
+    workflowStatus,
     isLoading: isWorkflowLoading,
     refetch: refetchWorkflow,
-  } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    functionName: 'workflowStatus',
-    query: {
-      enabled: isConnected,
-    },
-  });
+  } = useWorkflowStatus(isConnected);
 
   // Voter info
   const {
-    data: voterInfo,
+    voterInfo,
     isLoading: isVoterLoading,
     refetch: refetchVoter,
-  } = useReadContract({
+  } = useVoter(addressConnected,workflowStatus);
+  /*useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'getVoter',
-    args: address ? [address] : undefined,
+    args: addressConnected ? [addressConnected] : undefined,
     query: {
-      enabled: Boolean(address && isConnected && workflowStatus !== undefined && 
-    workflowStatus !== WORKFLOW_STATUS.RegisteringVoters),
+      enabled: Boolean(addressConnected && isConnected && workflowStatus !== undefined &&
+        workflowStatus !== WORKFLOW_STATUS.RegisteringVoters),
     },
-  });
-  
+  });*/
 
-  
+
+
   const value: AppContextType = {
-    address,
+    address:addressConnected,
     isConnected,
     isOwner: isOwner ?? false,
     isOwnerLoading,
@@ -85,7 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isVoter: Boolean(voterInfo && (voterInfo as Voter).isRegistered),
     isVoterLoading,
     workflowStatus: workflowStatus as number | undefined,
-    workflowLabel: workflowStatus !== undefined 
+    workflowLabel: workflowStatus !== undefined
       ? WORKFLOW_LABELS[Number(workflowStatus)]
       : 'Chargement...',
     isWorkflowLoading,
