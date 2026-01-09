@@ -58,16 +58,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isLoading: isVoterLoading,
     refetch: refetchVoter,
   } = useVoter(addressConnected,workflowStatus);
-  /*useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    functionName: 'getVoter',
-    args: addressConnected ? [addressConnected] : undefined,
-    query: {
-      enabled: Boolean(addressConnected && isConnected && workflowStatus !== undefined &&
-        workflowStatus !== WORKFLOW_STATUS.RegisteringVoters),
-    },
-  });*/
+
 
 
 

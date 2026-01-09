@@ -4,6 +4,7 @@ import WorkflowManager from "./components/admin/WorkflowManager";
 import AddVoter from "./components/admin/AddVoter";
 import AddProposal from './components/voting/AddProposal';
 import ProposalsList from './components/voting/ProposalsList';
+import VoteResults from './components/voting/VoteResults';
 import Footer from './components/layout/Footer';
 
 function App() {
@@ -27,7 +28,10 @@ function App() {
           <div className="w-full">
             <ProposalsList />
           </div>
-          
+           {/* Section Résultats du vote */}
+          <div className="w-full xl:col-span-4">
+            <VoteResults />
+          </div>
           {/* Section Admin - Gestion du workflow */}
           <div className="w-full">
             <WorkflowManager />
