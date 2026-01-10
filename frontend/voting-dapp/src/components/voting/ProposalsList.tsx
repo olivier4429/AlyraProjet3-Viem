@@ -223,7 +223,7 @@ export default function ProposalsList() {
                                     className={`border rounded-lg p-4 transition-all ${
                                         isVotedProposal
                                             ? 'border-green-500 bg-green-50'
-                                            : 'hover:bg-gray-50'
+                                            : 'hover:bg-background'
                                     }`}
                                 >
                                     <div className="flex justify-between items-start gap-4">

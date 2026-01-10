@@ -180,7 +180,7 @@ export default function VoteResults() {
         }
         switch (index) {
             case 1:
-                return "border-gray-300 bg-gray-50";
+                return "border-gray-300 bg-background";
             case 2:
                 return "border-orange-300 bg-orange-50";
             default:

@@ -164,13 +164,13 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 container mx-auto p-4 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Barre de progression du workflow */}
-          <Card className="bg-white shadow-sm">
+          <Card className="bg-card shadow-sm">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-700">Progression du vote</h2>
