@@ -1,84 +1,163 @@
-# Commandes:
-npm create vite@latest voting-dapp -- --template react-ts
-cd .\voting-dapp\
-npm install   wagmi@^2.9.0   @rainbow-me/rainbowkit@^2.2.10   viem   @tanstack/react-query
+# ⚛️ Voting DApp - Frontend
 
-https://ui.shadcn.com/docs/installation/vite
+Interface React moderne pour interagir avec le smart contract de vote.
 
-Pour déployer : npx hardhat run .\scripts\deployVoting.ts --network localhost
+## 🛠️ Stack technique
 
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool ultra-rapide
+- **Wagmi v2** - React Hooks pour Ethereum
+- **RainbowKit** - Connexion wallet
+- **Viem** - Ethereum TypeScript library
+- **TailwindCSS** - Styling utility-first
+- **shadcn/ui** - Composants UI réutilisables
+- **React Query** - Gestion du cache et des requêtes
 
+## 🚀 Quick Start
 
-# React + TypeScript + Vite
+```bash
+# Installation
+npm install
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Configuration
+cp .env.example .env.local
+# Éditer .env.local avec vos valeurs
 
-Currently, two official plugins are available:
+# Développement
+npm run dev
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# Build
+npm run build
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview du build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## ⚙️ Configuration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Variables d'environnement
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# .env.local
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id
+VITE_CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+VITE_APP_ENV=development
 ```
+
+**Important** : Toutes les variables doivent commencer par `VITE_` pour être accessibles.
+
+### Configuration Wagmi
+
+```typescript
+// src/wagmi.ts
+import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { mainnet, sepolia, hardhat } from 'wagmi/chains';
+
+export const config = getDefaultConfig({
+  appName: 'Voting DApp',
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
+  chains: [
+    hardhat,    // Développement local
+    sepolia,    // Testnet
+    mainnet     // Production
+  ],
+});
+```
+
+### Configuration des constantes
+
+```typescript
+// src/constants.ts
+export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`;
+
+export const WORKFLOW_STATUS = {
+  RegisteringVoters: 0,
+  ProposalsRegistrationStarted: 1,
+  ProposalsRegistrationEnded: 2,
+  VotingSessionStarted: 3,
+  VotingSessionEnded: 4,
+  VotesTallied: 5,
+} as const;
+```
+
+## 🏗️ Architecture
+
+### Structure des dossiers
+
+```
+src/
+├── abi/
+│   └── voting.ts              # ABI du smart contract
+├── components/
+│   ├── admin/
+│   │   ├── AddVoter.tsx       # Enregistrement des votants
+│   │   └── WorkflowManager.tsx # Gestion des phases
+│   ├── voting/
+│   │   ├── AddProposal.tsx    # Soumission de propositions
+│   │   ├── ProposalsList.tsx  # Liste et vote
+│   │   └── VoteResults.tsx    # Résultats du vote
+│   ├── layout/
+│   │   ├── Header.tsx         # En-tête avec ConnectButton
+│   │   └── Footer.tsx         # Pied de page
+│   ├── shared/
+│   │   └── CustomMessageCard.tsx # Messages réutilisables
+│   └── ui/                    # Composants shadcn/ui
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       └── ...
+├── contexts/
+│   └── AppContext.tsx         # Context global de l'app
+├── hooks/
+│   └── useOwner.ts            # Hook custom pour vérifier le propriétaire
+│   └── useVoter.ts            # Hook pour avoir des sur le voter connecté
+│   └── useworkflow.ts         # Hook pour connaitre l'état du workflow
+├── types.ts                   # Types Voter et Proposal utilisé dans l'app
+├── constants.ts               # Constantes (adresse, enum, etc.)
+├── providers.tsx              # Providers Wagmi, RainbowKit, Query
+├── wagmi.ts                   # Configuration Wagmi
+├── global.css                 # Styles globaux
+├── App.tsx                    # Composant racine
+└── main.tsx                   # Point d'entrée
+```
+
+## 🧪 Tests
+
+```bash
+# Tests unitaires (à venir)
+npm run test
+
+# Tests avec UI
+npm run test:ui
+
+# Couverture de code
+npm run test:coverage
+```
+
+## 📦 Build et déploiement
+
+```bash
+# Build de production
+npm run build
+
+# Analyser le bundle
+npm run build -- --mode analyze
+
+# Déployer sur Vercel
+vercel
+```
+
+
+## 🔗 Ressources
+
+- [Wagmi Documentation](https://wagmi.sh/)
+- [RainbowKit Docs](https://www.rainbowkit.com/)
+- [Viem Documentation](https://viem.sh/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [TailwindCSS](https://tailwindcss.com/)
+- [Vite Guide](https://vitejs.dev/guide/)
+
+## 📝 Licence
+
+MIT
