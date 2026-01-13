@@ -3,7 +3,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useApp } from '@/contexts/AppContext';
 
 export default function Header() {
-    const { address, isConnected, isOwner, workflowLabel } = useApp();
+    const {  isConnected, isOwner, workflowLabel } = useApp();
 
     return (
         <header className="border-b p-4">
