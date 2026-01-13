@@ -9,7 +9,6 @@ export default function Footer() {
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
                     <div>
                         <p className="font-semibold">Système de Vote Décentralisé</p>
-                        <p className="text-xs">Propulsé par Ethereum</p>
                     </div>
                     
                     {isConnected && (
@@ -24,7 +23,7 @@ export default function Footer() {
                     )}
                     
                     <div className="text-xs text-gray-500">
-                        © 2024 - Projet Web3
+                        © 2026 - Projet Web3
                     </div>
                 </div>
             </div>
