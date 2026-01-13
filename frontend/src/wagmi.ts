@@ -4,7 +4,7 @@ import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 
 export const config = getDefaultConfig({
   appName: 'Projet3 app',
-  projectId: '2ce3111a7d9bc47a716178ccde6ea8ff',
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
   chains: [hardhat,mainnet, sepolia],
 });
 
