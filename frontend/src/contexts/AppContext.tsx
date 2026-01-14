@@ -72,7 +72,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     workflowStatus: workflowStatus as number | undefined,
     workflowLabel: workflowStatus !== undefined
       ? WORKFLOW_LABELS[Number(workflowStatus)]
-      : 'Chargement...',
+      : 'Inconnu',
     isWorkflowLoading,
     refetchAll: () => {
       //Tous les appels à refaire quand qq chose est mis à jour sur le contrat
