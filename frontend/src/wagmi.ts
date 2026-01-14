@@ -7,8 +7,8 @@ const isProduction = import.meta.env.VITE_APP_ENV === 'vercel';
 
 // Chains conditionnelles
 const chains = isProduction 
-  ? [sepolia] // ✅ Vercel : SEULEMENT Sepolia
-  : [hardhat, sepolia, mainnet]; // 🛠️ Dev : tous les réseaux
+  ? [sepolia] as const // ✅ Vercel : SEULEMENT Sepolia
+  : [hardhat, sepolia, mainnet] as const; // 🛠️ Dev : tous les réseaux
 
 
 
