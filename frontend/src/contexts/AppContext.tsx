@@ -25,6 +25,9 @@ interface AppContextType {
   workflowStatus: number | undefined;
   workflowLabel: string;
   isWorkflowLoading: boolean;
+  isWorkflowError: boolean;
+  workflowError: string | null;
+
 
   // Actions
   refetchAll: () => void;
@@ -33,7 +36,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { address:addressConnected, isConnected } = useAccount();
+  const { address: addressConnected, isConnected } = useAccount();
 
   // Owner info
   const {
@@ -47,6 +50,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const {
     workflowStatus,
     isLoading: isWorkflowLoading,
+    isError: isWorkflowError,
+    error: workflowError,
     refetch: refetchWorkflow,
   } = useWorkflowStatus(isConnected);
 
@@ -55,13 +60,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     voterInfo,
     isLoading: isVoterLoading,
     refetch: refetchVoter,
-  } = useVoter(addressConnected,workflowStatus);
+  } = useVoter(addressConnected, workflowStatus);
 
 
 
 
   const value: AppContextType = {
-    address:addressConnected,
+    address: addressConnected,
     isConnected,
     isOwner: isOwner ?? false,
     isOwnerLoading,
@@ -74,6 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ? WORKFLOW_LABELS[Number(workflowStatus)]
       : 'Inconnu',
     isWorkflowLoading,
+    isWorkflowError,
+    workflowError: workflowError?.message ?? null,
     refetchAll: () => {
       //Tous les appels à refaire quand qq chose est mis à jour sur le contrat
       refetchOwner();

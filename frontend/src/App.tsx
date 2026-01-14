@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Users, FileText, Vote, BarChart3, Settings } from 'lucide-react';
 
 function App() {
-  const { workflowStatus, isOwner, isVoter } = useApp();
+  const { workflowStatus, isOwner, isVoter ,isWorkflowError, workflowError} = useApp();
 
   // Déterminer quelle section afficher en fonction du workflow
   const renderMainContent = () => {
@@ -156,7 +156,7 @@ function App() {
         return (
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-gray-600">Status du contrat inconnu</p>
+              <p className="text-gray-600">Status du contrat inconnu {isWorkflowError}, {workflowError}</p>
             </CardContent>
           </Card>
         );
