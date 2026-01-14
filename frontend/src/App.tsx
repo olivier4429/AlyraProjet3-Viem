@@ -156,7 +156,7 @@ function App() {
         return (
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-gray-600">Chargement...</p>
+              <p className="text-gray-600">Status du contrat inconnu</p>
             </CardContent>
           </Card>
         );
