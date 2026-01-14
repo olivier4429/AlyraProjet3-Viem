@@ -141,6 +141,8 @@ export default function VoteResults() {
         );
     }
 
+    //Tout le monde peut voir les resultats
+    /* 
     if (!isVoter) {
         return (
             <CustomMessageCard title={TITLE}>
@@ -148,7 +150,7 @@ export default function VoteResults() {
             </CustomMessageCard>
         );
     }
-
+    */
     if (workflowStatus !== 5) {
         return (
             <CustomMessageCard title={TITLE}>
