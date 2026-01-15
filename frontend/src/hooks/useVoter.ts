@@ -19,8 +19,9 @@ export function useVoter(addressConnected?: Address, workflowStatus?:number) {
     functionName: 'getVoter',
     args: addressConnected ? [addressConnected] : undefined,
     query: {
-      enabled: Boolean(addressConnected && workflowStatus !== undefined &&
-        workflowStatus > WORKFLOW_STATUS.RegisteringVoters),
+      enabled: Boolean(addressConnected && workflowStatus !== undefined
+                       //&& workflowStatus > WORKFLOW_STATUS.RegisteringVoters
+                      ),
     },
   });
 
