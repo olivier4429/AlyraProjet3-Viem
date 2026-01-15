@@ -1,5 +1,6 @@
 import { mainnet, sepolia, hardhat } from 'wagmi/chains'
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { http } from 'wagmi';
 
 // Déterminer les chains selon l'environnement
 const isProduction = import.meta.env.VITE_APP_ENV === 'vercel';
