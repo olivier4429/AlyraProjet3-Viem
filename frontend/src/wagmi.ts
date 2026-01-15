@@ -16,6 +16,13 @@ export const config = getDefaultConfig({
   appName: 'Projet3 app',
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
   chains: chains,
+    //  Configuration des RPC personnalisés
+  transports: {
+    // RPC pour Sepolia
+    [sepolia.id]: import.meta.env.VITE_SEPOLIA_RPC_URL 
+      ? http(import.meta.env.VITE_SEPOLIA_RPC_URL) // 👈  RPC personnalisé
+      : http(), // 👈 RPC public par défaut si pas de variable
+  },
 });
 
 
