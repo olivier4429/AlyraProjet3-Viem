@@ -1,8 +1,8 @@
 import { useReadContract } from 'wagmi';
 import { type Address } from 'viem';
 import { CONTRACT_ABI } from '@/abi/voting';
-import { CONTRACT_ADDRESS, WORKFLOW_STATUS, } from "@/constants";
-
+//import { CONTRACT_ADDRESS, WORKFLOW_STATUS, } from "@/constants";
+import { CONTRACT_ADDRESS } from "@/constants";
 export function useVoter(addressConnected?: Address, workflowStatus?:number) {
 
   // Voter info
