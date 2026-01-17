@@ -7,7 +7,7 @@ import ProposalsList from './components/voting/ProposalsList';
 import VoteResults from './components/voting/VoteResults';
 import { useApp } from './contexts/AppContext';
 import Footer from './components/layout/Footer';
-import RegisteredVotersList from './components/admin/RegisteredVotersList';
+import RegisteredVotersList from './components/voting/RegisteredVotersList';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Users, FileText, Vote, BarChart3, Settings } from 'lucide-react';
 

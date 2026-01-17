@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Users, CheckCircle2 } from 'lucide-react';
-import { CONTRACT_ABI } from '@/abi/voting';
 import { CONTRACT_ADDRESS } from '@/constants';
 import type { Address } from 'viem';
 
