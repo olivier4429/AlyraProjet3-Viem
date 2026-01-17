@@ -99,7 +99,7 @@ export default function RegisteredVotersList() {
               </div>
             ))}
           </div>
-        )}
+        )}  
       </CardContent>
     </Card>
   );
