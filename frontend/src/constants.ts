@@ -1,6 +1,7 @@
 import { type Address } from "viem";
 
 export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as Address;
+export const CONTRACT_DEPLOYMENT_BLOCK  = import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK;
 
 export const WORKFLOW_FUNCTIONS = {
   START_PROPOSALS: "startProposalsRegistering",
