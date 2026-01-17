@@ -84,7 +84,7 @@ export default function ProposalsList() {
                             }
                         ],
                     },
-                    fromBlock: 0n,
+                    fromBlock: 'earliest',
                     toBlock: 'latest',
                 });
 
