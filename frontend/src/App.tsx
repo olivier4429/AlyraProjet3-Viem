@@ -7,11 +7,12 @@ import ProposalsList from './components/voting/ProposalsList';
 import VoteResults from './components/voting/VoteResults';
 import { useApp } from './contexts/AppContext';
 import Footer from './components/layout/Footer';
+import RegisteredVotersList from './components/admin/RegisteredVotersList';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Users, FileText, Vote, BarChart3, Settings } from 'lucide-react';
 
 function App() {
-  const { workflowStatus, isOwner, isVoter ,isWorkflowError, workflowError} = useApp();
+  const { workflowStatus, isOwner, isVoter, isWorkflowError, workflowError } = useApp();
 
   // Déterminer quelle section afficher en fonction du workflow
   const renderMainContent = () => {
@@ -166,10 +167,10 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1 container mx-auto p-4 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Barre de progression du workflow */}
+          {/* Barre de progression du workflow **************************************************/}
           <Card className="bg-card shadow-sm">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
@@ -182,11 +183,10 @@ function App() {
                 {[0, 1, 2, 3, 4, 5].map((step) => (
                   <div
                     key={step}
-                    className={`flex-1 h-2 rounded-full transition-all ${
-                      workflowStatus !== undefined && step <= workflowStatus
+                    className={`flex-1 h-2 rounded-full transition-all ${workflowStatus !== undefined && step <= workflowStatus
                         ? 'bg-blue-600'
                         : 'bg-gray-200'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>
@@ -198,12 +198,15 @@ function App() {
               </div>
             </CardContent>
           </Card>
+          {/* Fin Barre de progression du workflow **************************************************/}
 
+          <Card className="bg-card shadow-sm"></Card>
           {/* Contenu principal basé sur la phase */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Colonne principale (3/4) */}
             <div className="lg:col-span-3">
               {renderMainContent()}
+              <RegisteredVotersList/>
             </div>
 
             {/* Sidebar (1/4) - Toujours visible pour l'admin */}
@@ -244,7 +247,7 @@ function App() {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
