@@ -1,10 +1,9 @@
 
-
+import  type {  Address } from 'viem';
 import { usePublicClient, useWatchContractEvent } from 'wagmi';
-import { CONTRACT_ADDRESS, WORKFLOW_STATUS } from '@/constants';
+import { CONTRACT_ADDRESS } from '@/constants';
 import { CONTRACT_ABI } from '@/abi/voting';
 
-import type { Address } from 'viem';
 import { useState, useCallback, useEffect } from 'react';
 
 export function useListVoters() {
@@ -17,7 +16,7 @@ export function useListVoters() {
 
 
     // 📥 Fonction de fetch pour l'historique recuperer l'ensemble des votants autorisés.
-    // PAs de fetch sur les evenements donc on doit en developper un custom.
+    // Pas de fetch sur les evenements donc on doit en developper un custom.
     const fetchVoters = useCallback(async () => {
         if (!publicClient) {
             return;
@@ -69,7 +68,6 @@ export function useListVoters() {
             const newAddresses = logs.map((log) =>
                 log.args.voterAddress as Address
             );
-
 
             // Mettre à jour les états
             setVoters((prev) => {
