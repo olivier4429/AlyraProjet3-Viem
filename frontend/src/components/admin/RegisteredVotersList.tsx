@@ -5,6 +5,8 @@ import { Users, CheckCircle2 } from 'lucide-react';
 import { CONTRACT_ADDRESS, WORKFLOW_STATUS } from '@/constants';
 import type { Address } from 'viem';
 import CustomMessageCard from '../shared/CustomMessageCard';
+import { useApp } from '@/contexts/AppContext';
+
 
 interface VoterRegisteredEvent {
   voterAddress: Address;
@@ -14,7 +16,7 @@ interface VoterRegisteredEvent {
 export default function RegisteredVotersList() {
 
   const TITLE = "Liste des voteurs";
-  const { chainId,isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
+  const {  isConnected, workflowStatus } = useApp();
 
   const [voters, setVoters] = useState<VoterRegisteredEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +58,7 @@ export default function RegisteredVotersList() {
     };
 
     fetchVoters();
-  }, [publicClient, chainId]);
+  }, [publicClient]);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -72,25 +74,11 @@ export default function RegisteredVotersList() {
     );
   }
 
-  if (isOwnerLoading) {
-    return (
-      <CustomMessageCard title={TITLE}>
-        Vérification de vos droits d'administrateur...
-      </CustomMessageCard>
-    );
-  }
 
-  if (!isOwner) {
+  if (workflowStatus===undefined || workflowStatus < WORKFLOW_STATUS.RegisteringVoters) {
     return (
       <CustomMessageCard title={TITLE}>
-        ❌ Accès refusé : Vous n'êtes pas le propriétaire du contrat.
-      </CustomMessageCard>
-    );
-  }
-  if (workflowStatus <= WORKFLOW_STATUS.RegisteringVoters) {
-    return (
-      <CustomMessageCard title={TITLE}>
-        ⏸️ L'enregistrement des voteurs n'a pas encore commencé.
+        ⏸️ L'enregistrement des votants n'a pas encore commencé.
       </CustomMessageCard>
     );
   }

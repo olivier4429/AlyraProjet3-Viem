@@ -19,7 +19,7 @@ import {
 
 export default function AddVoter() {
     const TITLE = "Enregistrement des voteurs";
-    const { chainId,isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
+    const { isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
 
     const [address, setAddress] = useState("");
 
@@ -33,7 +33,7 @@ export default function AddVoter() {
             setAddress("");
             refetchAll();
         }
-    }, [isSuccess, chainId, refetchAll]);
+    }, [isSuccess, refetchAll]);
 
     const handleAddVoter = () => {
         if (!isAddress(address)) {

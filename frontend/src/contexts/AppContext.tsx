@@ -8,7 +8,6 @@ import useVoter from '@/hooks/useVoter';
 
 interface AppContextType {
   // Connexion
-  chainId: number | undefined
   address: string | undefined;
   isConnected: boolean;
 
@@ -37,7 +36,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { chainId, address: addressConnected, isConnected } = useAccount();
+  const {  address: addressConnected, isConnected } = useAccount();
 
   // Owner info
   const {
@@ -65,7 +64,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 
   const value: AppContextType = {
-    chainId,
     address: addressConnected,
     isConnected,
     isOwner: isOwner ?? false,
