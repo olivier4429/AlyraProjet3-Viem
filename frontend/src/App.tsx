@@ -184,8 +184,8 @@ function App() {
                   <div
                     key={step}
                     className={`flex-1 h-2 rounded-full transition-all ${workflowStatus !== undefined && step <= workflowStatus
-                        ? 'bg-blue-600'
-                        : 'bg-gray-200'
+                      ? 'bg-blue-600'
+                      : 'bg-gray-200'
                       }`}
                   />
                 ))}
@@ -206,7 +206,7 @@ function App() {
             {/* Colonne principale (3/4) */}
             <div className="lg:col-span-3">
               {renderMainContent()}
-              <RegisteredVotersList/>
+              <RegisteredVotersList />
             </div>
 
             {/* Sidebar (1/4) - Toujours visible pour l'admin */}

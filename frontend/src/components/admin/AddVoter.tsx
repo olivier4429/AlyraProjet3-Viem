@@ -19,12 +19,13 @@ import {
 
 export default function AddVoter() {
     const TITLE = "Enregistrement des voteurs";
-    const { isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
-    
+    const { chainId,isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
+
     const [address, setAddress] = useState("");
 
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
 
     // Refetch après succès
     useEffect(() => {
@@ -32,7 +33,7 @@ export default function AddVoter() {
             setAddress("");
             refetchAll();
         }
-    }, [isSuccess, refetchAll]);
+    }, [isSuccess, chainId, refetchAll]);
 
     const handleAddVoter = () => {
         if (!isAddress(address)) {
@@ -46,6 +47,9 @@ export default function AddVoter() {
             functionName: "addVoter",
             args: [address],
         });
+
+        //mettre à jour la liste des votants après l'ajout
+        refetchAll();
     };
 
     // Vérifications

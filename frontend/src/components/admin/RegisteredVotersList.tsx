@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { usePublicClient } from 'wagmi';
+import {  usePublicClient } from 'wagmi';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Users, CheckCircle2 } from 'lucide-react';
-import { CONTRACT_ADDRESS } from '@/constants';
+import { CONTRACT_ADDRESS, WORKFLOW_STATUS } from '@/constants';
 import type { Address } from 'viem';
+import CustomMessageCard from '../shared/CustomMessageCard';
 
 interface VoterRegisteredEvent {
   voterAddress: Address;
@@ -11,6 +12,10 @@ interface VoterRegisteredEvent {
 }
 
 export default function RegisteredVotersList() {
+
+  const TITLE = "Liste des voteurs";
+  const { chainId,isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
+
   const [voters, setVoters] = useState<VoterRegisteredEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const publicClient = usePublicClient();
@@ -21,7 +26,7 @@ export default function RegisteredVotersList() {
 
       try {
         setIsLoading(true);
-        
+
         // Récupérer tous les événements VoterRegistered
         const logs = await publicClient.getLogs({
           address: CONTRACT_ADDRESS,
@@ -51,11 +56,44 @@ export default function RegisteredVotersList() {
     };
 
     fetchVoters();
-  }, [publicClient]);
+  }, [publicClient, chainId]);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
+
+
+  // Vérifications
+  if (!isConnected) {
+    return (
+      <CustomMessageCard title={TITLE}>
+        ⚠️ Connectez votre wallet pour accéder aux fonctions d'administration.
+      </CustomMessageCard>
+    );
+  }
+
+  if (isOwnerLoading) {
+    return (
+      <CustomMessageCard title={TITLE}>
+        Vérification de vos droits d'administrateur...
+      </CustomMessageCard>
+    );
+  }
+
+  if (!isOwner) {
+    return (
+      <CustomMessageCard title={TITLE}>
+        ❌ Accès refusé : Vous n'êtes pas le propriétaire du contrat.
+      </CustomMessageCard>
+    );
+  }
+  if (workflowStatus <= WORKFLOW_STATUS.RegisteringVoters) {
+    return (
+      <CustomMessageCard title={TITLE}>
+        ⏸️ L'enregistrement des voteurs n'a pas encore commencé.
+      </CustomMessageCard>
+    );
+  }
 
   return (
     <Card>
@@ -98,7 +136,7 @@ export default function RegisteredVotersList() {
               </div>
             ))}
           </div>
-        )}  
+        )}
       </CardContent>
     </Card>
   );

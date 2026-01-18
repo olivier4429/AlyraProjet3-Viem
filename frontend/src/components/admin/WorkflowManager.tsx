@@ -16,7 +16,7 @@ import {
 
 export default function WorkflowManager() {
     const TITLE = "Gestion du workflow";
-    const { isOwner, isOwnerLoading, isConnected, workflowStatus, workflowLabel, refetchAll } = useApp();
+    const { chainId, isOwner, isOwnerLoading, isConnected, workflowStatus, workflowLabel, refetchAll } = useApp();
 
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
     const { isSuccess: isConfirmed, isLoading: isMining } = useWaitForTransactionReceipt({ hash });
@@ -26,7 +26,7 @@ export default function WorkflowManager() {
         if (isConfirmed) {
             refetchAll();
         }
-    }, [isConfirmed, refetchAll]);
+    }, [isConfirmed, chainId,refetchAll]);
 
     const isLoading = isPending || isMining;
 
