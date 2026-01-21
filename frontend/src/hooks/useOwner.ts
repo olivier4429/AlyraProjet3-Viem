@@ -4,7 +4,7 @@ import { CONTRACT_ABI } from '@/abi/voting';
 import { CONTRACT_ADDRESS } from "@/constants";
 
 export function useOwner(addressConnected?: Address) {
-  
+
   const {
     data: owner,
     isLoading,
@@ -18,6 +18,7 @@ export function useOwner(addressConnected?: Address) {
     functionName: 'owner',
     query: {
       enabled: Boolean(addressConnected),
+      retry: false,  // ← Désactive les retries automatiques
     },
   });
 

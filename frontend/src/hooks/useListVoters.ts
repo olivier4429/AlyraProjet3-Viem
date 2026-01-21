@@ -1,13 +1,14 @@
 
-import  type {  Address } from 'viem';
+import type { Address } from 'viem';
 import { usePublicClient, useWatchContractEvent } from 'wagmi';
 import { CONTRACT_ADDRESS } from '@/constants';
 import { CONTRACT_ABI } from '@/abi/voting';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useApp } from '@/contexts/AppContext';
 
 export function useListVoters() {
-
+    const { isConnected, isVoter } = useApp();
     const [voters, setVoters] = useState<Address[]>([]);
 
 
@@ -53,8 +54,9 @@ export function useListVoters() {
 
     //PARTIE 2: Chargement initial des votants au montage du hook
     useEffect(() => {
+        if (!isConnected || !publicClient) return;
         fetchVoters();
-    }, [fetchVoters]);
+    }, [isConnected, publicClient]);
 
 
 
@@ -71,7 +73,13 @@ export function useListVoters() {
 
             // Mettre à jour les états
             setVoters((prev) => {
-                const combined = [...prev, ...newAddresses];
+                // ✅ Ajouter seulement les nouvelles adresses non présentes
+                const combined = [...prev];
+                for (const addr of newAddresses) {
+                    if (!combined.some(v => v.toLowerCase() === addr.toLowerCase())) {
+                        combined.push(addr);
+                    }
+                }
                 return combined;
             });
         },

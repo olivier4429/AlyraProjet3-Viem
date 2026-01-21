@@ -3,7 +3,7 @@ import { type Address } from 'viem';
 import { CONTRACT_ABI } from '@/abi/voting';
 //import { CONTRACT_ADDRESS, WORKFLOW_STATUS, } from "@/constants";
 import { CONTRACT_ADDRESS } from "@/constants";
-export function useVoter(addressConnected?: Address, workflowStatus?:number) {
+export function useVoter(addressConnected?: Address, workflowStatus?: number) {
 
   // Voter info
   const {
@@ -20,8 +20,9 @@ export function useVoter(addressConnected?: Address, workflowStatus?:number) {
     args: addressConnected ? [addressConnected] : undefined,
     query: {
       enabled: Boolean(addressConnected && workflowStatus !== undefined
-                       //&& workflowStatus > WORKFLOW_STATUS.RegisteringVoters
-                      ),
+        //&& workflowStatus > WORKFLOW_STATUS.RegisteringVoters
+      ),
+      retry: false,  // ← Désactive les retries automatiques
     },
   });
 

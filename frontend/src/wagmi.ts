@@ -19,11 +19,11 @@ export const config = getDefaultConfig({
   chains: chains,
   //  Configuration des RPC personnalisés
   transports: {
-    [hardhat.id]: http('http://127.0.0.1:8545'), // 👈 MANQUANT !
+    [hardhat.id]: http('http://127.0.0.1:8545'),
     [sepolia.id]: import.meta.env.VITE_SEPOLIA_RPC_URL
       ? http(import.meta.env.VITE_SEPOLIA_RPC_URL)
       : http(),
-    [mainnet.id]: http(), // 👈 MANQUANT !
+    [mainnet.id]: http(), 
   },
 });
 

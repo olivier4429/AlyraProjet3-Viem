@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAccount } from 'wagmi';
-import { WORKFLOW_LABELS } from '../constants';
+import { CONTRACT_ADDRESS, WORKFLOW_LABELS } from '../constants';
 import { type Voter } from '@/types';
 import useOwner from '@/hooks/useOwner';
 import useWorkflowStatus from '@/hooks/useWorkflowStatus';
@@ -86,6 +86,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refetchWorkflow();
     },
   };
+
+// DEBUG - à supprimer après
+console.log('🔍 AppContext Debug:', {
+  CONTRACT_ADDRESS: CONTRACT_ADDRESS,
+  addressConnected,
+  isConnected,
+  owner,
+  isOwner,
+  isOwnerLoading,
+  ownerError: useOwner(addressConnected).error?.message,
+});
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

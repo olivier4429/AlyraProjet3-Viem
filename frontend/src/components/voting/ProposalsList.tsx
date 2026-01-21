@@ -1,46 +1,20 @@
-import { useWatchContractEvent, usePublicClient , useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useState, useEffect } from "react";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { CONTRACT_ADDRESS } from "@/constants";
 import { CONTRACT_ABI } from '@/abi/voting';
 import { useApp } from '@/contexts/AppContext';
+import { useProposals } from '@/hooks/useProposals';
 import CustomMessageCard from "@/components/shared/CustomMessageCard";
-import { type Proposal } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Check, Vote } from "lucide-react";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-
-/**
-### **Flux de données**
-```
-1. Montage du composant
-   ↓
-2. publicClient.getLogs() → Récupère tous les événements passés
-   ↓
-3. setProposalIds([0, 1, 2, 3...]) → Met à jour les IDs
-   ↓
-4. useEffect sur proposalIds → Récupère les détails de chaque proposition
-   ↓
-5. setProposals([...]) → Affiche les propositions
-   ↓
-6. useWatchContractEvent → Écoute en temps réel les nouvelles propositions
-*/
 export default function ProposalsList() {
     const TITLE = "Liste des propositions";
     const { isConnected, isVoter, voterInfo, workflowStatus, refetchAll } = useApp();
-    const [proposalIds, setProposalIds] = useState<number[]>([]);
-    const [proposals, setProposals] = useState<(Proposal & { id: number })[]>([]);
-    const [isLoadingProposals, setIsLoadingProposals] = useState(false);
+    const { proposals, isLoading: isLoadingProposals } = useProposals();
     const [votingForId, setVotingForId] = useState<number | null>(null);
-    const publicClient = usePublicClient();
 
-    // Write contract pour voter
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
     const { isSuccess: isConfirmed, isLoading: isMining } = useWaitForTransactionReceipt({ hash });
 
@@ -48,100 +22,6 @@ export default function ProposalsList() {
     const hasVoted = voterInfo?.hasVoted ?? false;
     const votedProposalId = voterInfo?.votedProposalId ? Number(voterInfo.votedProposalId) : null;
 
-    // Écouter les nouveaux événements ProposalRegistered en temps réel
-    useWatchContractEvent({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        eventName: 'ProposalRegistered',
-        onLogs(logs) {
-            logs.forEach(log => {
-                const proposalId = Number(log.args.proposalId);
-                setProposalIds(prev => {
-                    if (prev.includes(proposalId)) return prev;
-                    return [...prev, proposalId].sort((a, b) => a - b);
-                });
-            });
-        },
-    });
-
-    // Charger les propositions existantes depuis les événements passés
-    useEffect(() => {
-        if (!isConnected || !isVoter || !publicClient) return;
-
-        const loadPastProposals = async () => {
-            setIsLoadingProposals(true);
-            try {
-                const logs = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
-                    event: {
-                        type: 'event',
-                        name: 'ProposalRegistered',
-                        inputs: [
-                            {
-                                type: 'uint256',
-                                name: 'proposalId',
-                                indexed: false,
-                            }
-                        ],
-                    },
-                    fromBlock: 'earliest',
-                    toBlock: 'latest',
-                });
-
-                const ids = logs.map(log => Number(log.args.proposalId));
-                const uniqueIds = Array.from(new Set(ids)).sort((a, b) => a - b);
-                setProposalIds(uniqueIds);
-            } catch (error) {
-                console.error('Erreur lors du chargement des événements:', error);
-                setProposalIds([0]);
-            } finally {
-                setIsLoadingProposals(false);
-            }
-        };
-
-        loadPastProposals();
-    }, [isConnected, isVoter, publicClient]);
-
-    // Récupérer les détails de chaque proposition
-    useEffect(() => {
-        if (!isConnected || !isVoter || !publicClient || proposalIds.length === 0) return;
-
-        const fetchProposals = async () => {
-            try {
-                const fetchedProposals = await Promise.all(
-                    proposalIds.map(async (id) => {
-                        try {
-                            const result = await publicClient.readContract({
-                                address: CONTRACT_ADDRESS,
-                                abi: CONTRACT_ABI,
-                                functionName: 'getOneProposal',
-                                args: [BigInt(id)],
-                            });
-                            return {
-                                id,
-                                ...(result as Proposal),
-                            };
-                        } catch (error) {
-                            console.error(`Erreur pour la proposition ${id}:`, error);
-                            return null;
-                        }
-                    })
-                );
-
-                const validProposals = fetchedProposals.filter(
-                    (p): p is Proposal & { id: number } => p !== null && p.description !== undefined
-                );
-                
-                setProposals(validProposals);
-            } catch (error) {
-                console.error('Erreur lors de la récupération des propositions:', error);
-            }
-        };
-
-        fetchProposals();
-    }, [proposalIds, isConnected, isVoter, publicClient, workflowStatus]);
-
-    // Refetch après vote réussi
     useEffect(() => {
         if (isConfirmed) {
             setVotingForId(null);
@@ -149,7 +29,6 @@ export default function ProposalsList() {
         }
     }, [isConfirmed, refetchAll]);
 
-    // Fonction pour voter
     const handleVote = (proposalId: number) => {
         setVotingForId(proposalId);
         writeContract({
