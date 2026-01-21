@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { usePublicClient, useWatchContractEvent } from 'wagmi';
-import { CONTRACT_ADDRESS } from '@/constants';
+import { CONTRACT_ADDRESS, CONTRACT_DEPLOYMENT_BLOCK } from '@/constants';
 import { CONTRACT_ABI } from '@/abi/voting';
 import { useApp } from '@/contexts/AppContext';
 import { type Proposal } from '@/types';
@@ -25,7 +25,7 @@ export function useProposals() {
                     name: 'ProposalRegistered',
                     inputs: [{ type: 'uint256', name: 'proposalId', indexed: false }],
                 },
-                fromBlock: 'earliest',
+                fromBlock: CONTRACT_DEPLOYMENT_BLOCK,
                 toBlock: 'latest',
             });
 

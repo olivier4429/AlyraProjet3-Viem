@@ -25,7 +25,9 @@ export default function ProposalsList() {
     useEffect(() => {
         if (isConfirmed) {
             setVotingForId(null);
+            /* pas la pein e de faire de refectch. Le watchEvent dans useProposals s'en charge 
             refetchAll();
+            */
         }
     }, [isConfirmed, refetchAll]);
 

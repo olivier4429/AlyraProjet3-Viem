@@ -1,7 +1,17 @@
 import { type Address } from "viem";
 
 export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS as Address;
-export const CONTRACT_DEPLOYMENT_BLOCK  = import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK;
+//export const CONTRACT_DEPLOYMENT_BLOCK  = import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK;
+
+export const CONTRACT_DEPLOYMENT_BLOCK = (() => {
+    const block = import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK;
+    try {
+        return block ? BigInt(block) : 0n;
+    } catch {
+        console.warn('Invalid CONTRACT_DEPLOYMENT_BLOCK, using 0');
+        return 0n;
+    }
+})();
 
 export const WORKFLOW_FUNCTIONS = {
   START_PROPOSALS: "startProposalsRegistering",

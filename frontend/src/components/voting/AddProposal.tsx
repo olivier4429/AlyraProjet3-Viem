@@ -31,7 +31,9 @@ export default function AddProposal() {
     useEffect(() => {
         if (isConfirmed) {
             setDescription("");
+            /* pas la peine, les propositions seront rafraichies par le useWatch 
             refetchAll();
+            */
         }
     }, [isConfirmed, refetchAll]);
 

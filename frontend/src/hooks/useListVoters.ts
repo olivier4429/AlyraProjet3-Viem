@@ -1,14 +1,14 @@
 
 import type { Address } from 'viem';
 import { usePublicClient, useWatchContractEvent } from 'wagmi';
-import { CONTRACT_ADDRESS } from '@/constants';
+import { CONTRACT_ADDRESS, CONTRACT_DEPLOYMENT_BLOCK } from '@/constants';
 import { CONTRACT_ABI } from '@/abi/voting';
 
 import { useState, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 
 export function useListVoters() {
-    const { isConnected, isVoter } = useApp();
+    const { isConnected } = useApp();
     const [voters, setVoters] = useState<Address[]>([]);
 
 
@@ -22,6 +22,7 @@ export function useListVoters() {
         if (!publicClient) {
             return;
         }
+//console.log('🔍 CONTRACT_DEPLOYMENT_BLOCK:', CONTRACT_DEPLOYMENT_BLOCK, typeof CONTRACT_DEPLOYMENT_BLOCK);
 
         try {
             // Récupérer TOUS les événements passés
@@ -34,7 +35,7 @@ export function useListVoters() {
                         { type: 'address', name: 'voterAddress', indexed: false }
                     ]
                 },
-                fromBlock: 'earliest',
+                fromBlock: CONTRACT_DEPLOYMENT_BLOCK,
                 toBlock: 'latest'
             });
 

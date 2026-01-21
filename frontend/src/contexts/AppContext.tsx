@@ -6,6 +6,7 @@ import useOwner from '@/hooks/useOwner';
 import useWorkflowStatus from '@/hooks/useWorkflowStatus';
 import useVoter from '@/hooks/useVoter';
 
+
 interface AppContextType {
   // Connexion
   address: string | undefined;
@@ -81,6 +82,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     workflowError: workflowError?.message ?? null,
     refetchAll: () => {
       //Tous les appels à refaire quand qq chose est mis à jour sur le contrat
+      //Ca sert pour mettre à jour rapidement l'affichage apres une operation sans attendre qu'un watch detecte une modification.
+      //La liste proposals et voters sont mis à jour par leurs hooks respectifs via des watchEvents. 
+      // Je prefere que l'affichage ne se fasse qu'une fois validé par la blockchain. 
+      // De plus ils n'evoluent pas lorsqu'on fait avancer le workflow ou qu'on chang de compte
+      // Mais ça se discute. 
       refetchOwner();
       refetchVoter();
       refetchWorkflow();
