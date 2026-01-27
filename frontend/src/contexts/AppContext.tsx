@@ -1,18 +1,21 @@
-import { createContext, useContext, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { useAccount } from 'wagmi';
 import { CONTRACT_ADDRESS, WORKFLOW_LABELS } from '../constants';
 import { type Voter } from '@/types';
-import { useOwner, useWorkflowStatus, useVoter } from '@/hooks';
+import useOwner from '@/hooks/useOwner';
+import useWorkflowStatus from '@/hooks/useWorkflowStatus';
+import useVoter from '@/hooks/useVoter';
+
 
 interface AppContextType {
   // Connexion
-  address: `0x${string}` | undefined;
+  address: string | undefined;
   isConnected: boolean;
 
   // Owner
   isOwner: boolean;
   isOwnerLoading: boolean;
-  ownerAddress: `0x${string}` | undefined;
+  ownerAddress: string | undefined;
 
   // Voter
   voterInfo: Voter | undefined;
@@ -26,6 +29,7 @@ interface AppContextType {
   isWorkflowError: boolean;
   workflowError: string | null;
 
+
   // Actions
   refetchAll: () => void;
 }
@@ -33,15 +37,17 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { address, isConnected } = useAccount();
+  const {  address: addressConnected, isConnected } = useAccount();
 
+  // Owner info
   const {
     owner,
     isOwner,
     isLoading: isOwnerLoading,
     refetch: refetchOwner,
-  } = useOwner(address);
+  } = useOwner(addressConnected);
 
+  // Workflow status
   const {
     workflowStatus,
     isLoading: isWorkflowLoading,
@@ -50,20 +56,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refetch: refetchWorkflow,
   } = useWorkflowStatus(isConnected);
 
+  // Voter info
   const {
     voterInfo,
     isLoading: isVoterLoading,
     refetch: refetchVoter,
-  } = useVoter(address, workflowStatus as number | undefined);
+  } = useVoter(addressConnected, workflowStatus);
 
-  const refetchAll = useCallback(() => {
-    refetchOwner();
-    refetchVoter();
-    refetchWorkflow();
-  }, [refetchOwner, refetchVoter, refetchWorkflow]);
 
   const value: AppContextType = {
-    address,
+    address: addressConnected,
     isConnected,
     isOwner: isOwner ?? false,
     isOwnerLoading,
@@ -72,15 +74,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isVoter: Boolean(voterInfo && (voterInfo as Voter).isRegistered),
     isVoterLoading,
     workflowStatus: workflowStatus as number | undefined,
-    workflowLabel:
-      workflowStatus !== undefined
-        ? WORKFLOW_LABELS[Number(workflowStatus)]
-        : 'Inconnu',
+    workflowLabel: workflowStatus !== undefined
+      ? WORKFLOW_LABELS[Number(workflowStatus)]
+      : 'Inconnu',
     isWorkflowLoading,
     isWorkflowError,
     workflowError: workflowError?.message ?? null,
-    refetchAll,
+    refetchAll: () => {
+      //Tous les appels à refaire quand qq chose est mis à jour sur le contrat
+      //Ca sert pour mettre à jour rapidement l'affichage apres une operation sans attendre qu'un watch detecte une modification.
+      //La liste proposals et voters sont mis à jour par leurs hooks respectifs via des watchEvents. 
+      // Je prefere que l'affichage ne se fasse qu'une fois validé par la blockchain. 
+      // De plus ils n'evoluent pas lorsqu'on fait avancer le workflow ou qu'on chang de compte
+      // Mais ça se discute. 
+      refetchOwner();
+      refetchVoter();
+      refetchWorkflow();
+    },
   };
+
+// DEBUG - à supprimer après
+console.log('🔍 AppContext Debug:', {
+  CONTRACT_ADDRESS: CONTRACT_ADDRESS,
+  addressConnected,
+  isConnected,
+  owner,
+  isOwner,
+  isOwnerLoading,
+  ownerError: useOwner(addressConnected).error?.message,
+});
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

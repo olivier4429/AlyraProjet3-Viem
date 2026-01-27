@@ -1,14 +1,16 @@
 import { useReadContract } from 'wagmi';
 import { isAddressEqual, type Address } from 'viem';
 import { CONTRACT_ABI } from '@/abi/voting';
-import { CONTRACT_ADDRESS } from '@/constants';
+import { CONTRACT_ADDRESS } from "@/constants";
 
 export function useOwner(addressConnected?: Address) {
+
   const {
     data: owner,
     isLoading,
     isError,
     error,
+    isSuccess,
     refetch,
   } = useReadContract({
     abi: CONTRACT_ABI,
@@ -16,20 +18,17 @@ export function useOwner(addressConnected?: Address) {
     functionName: 'owner',
     query: {
       enabled: Boolean(addressConnected),
-      retry: false,
+      retry: false,  // ← Désactive les retries automatiques
     },
   });
 
-  const isOwner = addressConnected && owner 
-    ? isAddressEqual(addressConnected, owner) 
-    : false;
-
   return {
     owner,
-    isOwner,
+    isOwner: addressConnected && owner ? isAddressEqual(addressConnected, owner) : false,
     isLoading,
     isError,
     error,
+    isSuccess,
     refetch,
   };
 }
