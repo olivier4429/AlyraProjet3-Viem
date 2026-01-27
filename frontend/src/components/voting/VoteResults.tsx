@@ -14,12 +14,16 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 
+import { useProposals } from "@/hooks/useProposals";
+
+
 export default function VoteResults() {
     const TITLE = "Résultats du vote";
     const { isConnected, isVoter, workflowStatus } = useApp();
     const [proposalIds, setProposalIds] = useState<number[]>([]);
-    const [proposals, setProposals] = useState<(Proposal & { id: number })[]>([]);
-    const [isLoadingProposals, setIsLoadingProposals] = useState(false);
+    // const [proposals, setProposals] = useState<(Proposal & { id: number })[]>([]);
+    //const [isLoadingProposals, setIsLoadingProposals] = useState(false);
+    const { proposals, isLoading: isLoadingProposals } = useProposals();
     const publicClient = usePublicClient();
 
     // Récupérer le winningProposalID
@@ -33,104 +37,6 @@ export default function VoteResults() {
     });
 
     const winningId = winningProposalID ? Number(winningProposalID) : null;
-
-    // Écouter les événements ProposalRegistered
-    useWatchContractEvent({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        eventName: 'ProposalRegistered',
-        onLogs(logs) {
-            logs.forEach(log => {
-                const proposalId = Number(log.args.proposalId);
-                setProposalIds(prev => {
-                    if (prev.includes(proposalId)) return prev;
-                    return [...prev, proposalId].sort((a, b) => a - b);
-                });
-            });
-        },
-    });
-
-    // Charger les propositions existantes
-    useEffect(() => {
-        if (!isConnected || !isVoter || !publicClient) return;
-
-        const loadPastProposals = async () => {
-            setIsLoadingProposals(true);
-            try {
-                const logs = await publicClient.getLogs({
-                    address: CONTRACT_ADDRESS,
-                    event: {
-                        type: 'event',
-                        name: 'ProposalRegistered',
-                        inputs: [
-                            {
-                                type: 'uint256',
-                                name: 'proposalId',
-                                indexed: false,
-                            }
-                        ],
-                    },
-                    fromBlock: 0n,
-                    toBlock: 'latest',
-                });
-
-                const ids = logs.map(log => Number(log.args.proposalId));
-                const uniqueIds = Array.from(new Set(ids)).sort((a, b) => a - b);
-                setProposalIds(uniqueIds);
-            } catch (error) {
-                console.error('Erreur lors du chargement des événements:', error);
-                setProposalIds([0]);
-            } finally {
-                setIsLoadingProposals(false);
-            }
-        };
-
-        loadPastProposals();
-    }, [isConnected, isVoter, publicClient]);
-
-    // Récupérer les détails des propositions
-    useEffect(() => {
-        if (!isConnected || !isVoter || !publicClient || proposalIds.length === 0) return;
-
-        const fetchProposals = async () => {
-            try {
-                const fetchedProposals = await Promise.all(
-                    proposalIds.map(async (id) => {
-                        try {
-                            const result = await publicClient.readContract({
-                                address: CONTRACT_ADDRESS,
-                                abi: CONTRACT_ABI,
-                                functionName: 'getOneProposal',
-                                args: [BigInt(id)],
-                            });
-                            return {
-                                id,
-                                ...(result as Proposal),
-                            };
-                        } catch (error) {
-                            console.error(`Erreur pour la proposition ${id}:`, error);
-                            return null;
-                        }
-                    })
-                );
-
-                const validProposals = fetchedProposals.filter(
-                    (p): p is Proposal & { id: number } => p !== null && p.description !== undefined
-                );
-                
-                // Trier par nombre de votes (décroissant)
-                const sortedProposals = validProposals.sort((a, b) => {
-                    return Number(b.voteCount) - Number(a.voteCount);
-                });
-                
-                setProposals(sortedProposals);
-            } catch (error) {
-                console.error('Erreur lors de la récupération des propositions:', error);
-            }
-        };
-
-        fetchProposals();
-    }, [proposalIds, isConnected, isVoter, publicClient, workflowStatus]);
 
     // Vérifications
     if (!isConnected) {
@@ -258,8 +164,8 @@ export default function VoteResults() {
                             <h4 className="font-semibold text-gray-700 mb-3">Classement complet</h4>
                             {proposals.map((proposal, index) => {
                                 const isWinner = proposal.id === winningId;
-                                const percentage = totalVotes > 0 
-                                    ? (Number(proposal.voteCount) / totalVotes) * 100 
+                                const percentage = totalVotes > 0
+                                    ? (Number(proposal.voteCount) / totalVotes) * 100
                                     : 0;
 
                                 return (
@@ -310,9 +216,8 @@ export default function VoteResults() {
                                                     </div>
                                                     <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                                                         <div
-                                                            className={`h-2.5 rounded-full transition-all duration-500 ${
-                                                                isWinner ? 'bg-yellow-500' : 'bg-blue-500'
-                                                            }`}
+                                                            className={`h-2.5 rounded-full transition-all duration-500 ${isWinner ? 'bg-yellow-500' : 'bg-blue-500'
+                                                                }`}
                                                             style={{ width: `${percentage}%` }}
                                                         ></div>
                                                     </div>
