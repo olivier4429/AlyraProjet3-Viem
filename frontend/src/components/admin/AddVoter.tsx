@@ -16,7 +16,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { useListVoters } from '@/hooks/useListVoters';
+//import { useListVoters } from '@/hooks/useListVoters';
 
 export default function AddVoter() {
     const TITLE = "Enregistrement des voteurs";
