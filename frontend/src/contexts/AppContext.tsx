@@ -93,16 +93,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
   };
 
-// DEBUG - à supprimer après
-console.log('🔍 AppContext Debug:', {
-  CONTRACT_ADDRESS: CONTRACT_ADDRESS,
-  addressConnected,
-  isConnected,
-  owner,
-  isOwner,
-  isOwnerLoading,
-  ownerError: useOwner(addressConnected).error?.message,
-});
+
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
