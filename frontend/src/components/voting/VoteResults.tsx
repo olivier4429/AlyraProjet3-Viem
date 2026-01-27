@@ -1,10 +1,10 @@
-import { useWatchContractEvent, usePublicClient, useReadContract } from "wagmi";
-import { useState, useEffect } from "react";
+import {   useReadContract } from "wagmi";
+//import { useState } from "react";
 import { CONTRACT_ADDRESS } from "@/constants";
 import { CONTRACT_ABI } from '@/abi/voting';
 import { useApp } from '@/contexts/AppContext';
 import CustomMessageCard from "@/components/shared/CustomMessageCard";
-import { type Proposal } from "@/types";
+//import { type Proposal } from "@/types";
 import { Trophy, Medal, Award } from "lucide-react";
 import {
     Card,
@@ -20,11 +20,11 @@ import { useProposals } from "@/hooks/useProposals";
 export default function VoteResults() {
     const TITLE = "Résultats du vote";
     const { isConnected, isVoter, workflowStatus } = useApp();
-    const [proposalIds, setProposalIds] = useState<number[]>([]);
+    //const [proposalIds, setProposalIds] = useState<number[]>([]);
     // const [proposals, setProposals] = useState<(Proposal & { id: number })[]>([]);
     //const [isLoadingProposals, setIsLoadingProposals] = useState(false);
     const { proposals, isLoading: isLoadingProposals } = useProposals();
-    const publicClient = usePublicClient();
+    //const publicClient = usePublicClient();
 
     // Récupérer le winningProposalID
     const { data: winningProposalID } = useReadContract({
