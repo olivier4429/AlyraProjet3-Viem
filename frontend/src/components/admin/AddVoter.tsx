@@ -16,24 +16,27 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { useListVoters } from '@/hooks/useListVoters';
 
 export default function AddVoter() {
     const TITLE = "Enregistrement des voteurs";
-    const { isOwner, isOwnerLoading, isConnected, workflowStatus, refetchAll } = useApp();
+    const { isOwner, isOwnerLoading, isConnected, workflowStatus } = useApp();
 
     const [address, setAddress] = useState("");
 
     const { writeContract, data: hash, isPending, isError, error } = useWriteContract();
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-
+ //   const { refetchVoters} = useListVoters();
     // Refetch après succès
     useEffect(() => {
         if (isSuccess) {
             setAddress("");
-            refetchAll();
+ //           refetchVoters();
         }
-    }, [isSuccess, refetchAll]);
+    }, [isSuccess, 
+//        refetchVoters
+    ]);
 
     const handleAddVoter = () => {
         if (!isAddress(address)) {
@@ -49,7 +52,7 @@ export default function AddVoter() {
         });
 
         //mettre à jour la liste des votants après l'ajout
-        refetchAll();
+        // On ne met à aps à jour, le watch le fera refetchAll();
     };
 
     // Vérifications
