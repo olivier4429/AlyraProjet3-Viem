@@ -1,6 +1,6 @@
 import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { useAccount } from 'wagmi';
-import { CONTRACT_ADDRESS, WORKFLOW_LABELS } from '../constants';
+import { WORKFLOW_LABELS } from '../constants';
 import { type Voter } from '@/types';
 import { useOwner, useWorkflowStatus, useVoter } from '@/hooks';
 
