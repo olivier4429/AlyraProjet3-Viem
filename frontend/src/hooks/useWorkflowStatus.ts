@@ -1,17 +1,13 @@
 import { useReadContract } from 'wagmi';
 import { CONTRACT_ABI } from '@/abi/voting';
-import { CONTRACT_ADDRESS } from "@/constants";
+import { CONTRACT_ADDRESS } from '@/constants';
 
-
-
-export function useWorkflowStatus(isConnected:boolean) {
-
+export function useWorkflowStatus(isConnected: boolean) {
   const {
     data: workflowStatus,
     isLoading,
     isError,
     error,
-    isSuccess,
     refetch,
   } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -22,13 +18,11 @@ export function useWorkflowStatus(isConnected:boolean) {
     },
   });
 
-
   return {
     workflowStatus,
     isLoading,
     isError,
     error,
-    isSuccess,
     refetch,
   };
 }

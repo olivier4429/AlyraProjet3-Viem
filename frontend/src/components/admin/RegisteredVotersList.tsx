@@ -1,29 +1,18 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CheckCircle2 } from 'lucide-react';
-import {  WORKFLOW_STATUS } from '@/constants';
-import CustomMessageCard from '../shared/CustomMessageCard';
+import { WORKFLOW_STATUS } from '@/constants';
+import CustomMessageCard from '@/components/shared/CustomMessageCard';
 import { useApp } from '@/contexts/AppContext';
-import { useListVoters } from '@/hooks/useListVoters';
+import { useListVoters } from '@/hooks';
 
+const TITLE = 'Liste des voteurs';
 
+const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
 export default function RegisteredVotersList() {
-
-  const TITLE = "Liste des voteurs";
   const { isConnected, workflowStatus } = useApp();
+  const { voters, isLoading } = useListVoters(isConnected);
 
-
-  const {voters} = useListVoters();
-
-  
-
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-
-  // Vérifications
   if (!isConnected) {
     return (
       <CustomMessageCard title={TITLE}>
@@ -31,7 +20,6 @@ export default function RegisteredVotersList() {
       </CustomMessageCard>
     );
   }
-
 
   if (workflowStatus === undefined || workflowStatus < WORKFLOW_STATUS.RegisteringVoters) {
     return (
@@ -50,7 +38,9 @@ export default function RegisteredVotersList() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {voters.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-4 text-gray-500">Chargement...</div>
+        ) : voters.length === 0 ? (
           <div className="text-center py-4 text-gray-500">
             Aucun votant enregistré pour le moment
           </div>
@@ -63,16 +53,9 @@ export default function RegisteredVotersList() {
               >
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
-                  <div>
-                    <p className="font-mono text-sm font-medium">
-                      {formatAddress(voter)}
-                    </p>
-                   
-                  </div>
+                  <p className="font-mono text-sm font-medium">{formatAddress(voter)}</p>
                 </div>
-                <span className="text-xs text-gray-400">
-                  #{index + 1}
-                </span>
+                <span className="text-xs text-gray-400">#{index + 1}</span>
               </div>
             ))}
           </div>

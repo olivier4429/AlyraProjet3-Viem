@@ -1,17 +1,14 @@
 import { useReadContract } from 'wagmi';
 import { type Address } from 'viem';
 import { CONTRACT_ABI } from '@/abi/voting';
-//import { CONTRACT_ADDRESS, WORKFLOW_STATUS, } from "@/constants";
-import { CONTRACT_ADDRESS } from "@/constants";
-export function useVoter(addressConnected?: Address, workflowStatus?: number) {
+import { CONTRACT_ADDRESS } from '@/constants';
 
-  // Voter info
+export function useVoter(addressConnected?: Address, workflowStatus?: number) {
   const {
     data: voterInfo,
     isLoading,
     isError,
     error,
-    isSuccess,
     refetch,
   } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -19,20 +16,16 @@ export function useVoter(addressConnected?: Address, workflowStatus?: number) {
     functionName: 'getVoter',
     args: addressConnected ? [addressConnected] : undefined,
     query: {
-      enabled: Boolean(addressConnected && workflowStatus !== undefined
-        //&& workflowStatus > WORKFLOW_STATUS.RegisteringVoters
-      ),
-      retry: false,  // ← Désactive les retries automatiques
+      enabled: Boolean(addressConnected && workflowStatus !== undefined),
+      retry: false,
     },
   });
-
 
   return {
     voterInfo,
     isLoading,
     isError,
     error,
-    isSuccess,
     refetch,
   };
 }

@@ -1,119 +1,131 @@
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { usePublicClient, useWatchContractEvent } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_DEPLOYMENT_BLOCK } from '@/constants';
 import { CONTRACT_ABI } from '@/abi/voting';
-import { useApp } from '@/contexts/AppContext';
 import { type Proposal } from '@/types';
 
-export function useProposals() {
-    const { isConnected, isVoter } = useApp();
-    const [proposalIds, setProposalIds] = useState<number[]>([]);
-    const [proposals, setProposals] = useState<(Proposal & { id: number })[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const publicClient = usePublicClient();
+interface UseProposalsOptions {
+  enabled?: boolean;
+  sortByVotes?: boolean;
+}
 
-    // Charger les IDs depuis les événements
-    const fetchProposalIds = useCallback(async () => {
-        if (!publicClient) return;
+export function useProposals(options: UseProposalsOptions = {}) {
+  const { enabled = true, sortByVotes = false } = options;
+  
+  const [proposalIds, setProposalIds] = useState<number[]>([]);
+  const [proposals, setProposals] = useState<(Proposal & { id: number })[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const publicClient = usePublicClient();
 
-        try {
-            const logs = await publicClient.getLogs({
-                address: CONTRACT_ADDRESS,
-                event: {
-                    type: 'event',
-                    name: 'ProposalRegistered',
-                    inputs: [{ type: 'uint256', name: 'proposalId', indexed: false }],
-                },
-                fromBlock: CONTRACT_DEPLOYMENT_BLOCK,
-                toBlock: 'latest',
-            });
+  // Charger les IDs depuis les événements
+  const fetchProposalIds = useCallback(async () => {
+    if (!publicClient) return;
 
-            const ids = logs.map(log => Number(log.args.proposalId));
-            const uniqueIds = [...new Set(ids)].sort((a, b) => a - b);
-            setProposalIds(uniqueIds);
-        } catch (error) {
-            console.error('Erreur chargement IDs propositions:', error);
-            setProposalIds([0]);
-        }
-    }, [publicClient]);
-
-    // Charger les détails des propositions
-    const fetchProposals = useCallback(async () => {
-        if (!publicClient || proposalIds.length === 0) return;
-
-        setIsLoading(true);
-        try {
-            const fetched = await Promise.all(
-                proposalIds.map(async (id) => {
-                    try {
-                        const result = await publicClient.readContract({
-                            address: CONTRACT_ADDRESS,
-                            abi: CONTRACT_ABI,
-                            functionName: 'getOneProposal',
-                            args: [BigInt(id)],
-                        });
-                        return { id, ...(result as Proposal) };
-                    } catch {
-                        return null;
-                    }
-                })
-            );
-
-            setProposals(fetched.filter((p): p is Proposal & { id: number } => 
-                p !== null && p.description !== undefined
-            ));
-        } catch (error) {
-            console.error('Erreur chargement propositions:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [publicClient, proposalIds]);
-
-    // Chargement initial des IDs
-    useEffect(() => {
-        if (isConnected && isVoter) {
-            fetchProposalIds();
-        }
-    }, [isConnected, isVoter, fetchProposalIds]);
-
-    // Chargement des détails quand les IDs changent
-    useEffect(() => {
-        if (isConnected && isVoter) {
-            fetchProposals();
-        }
-    }, [proposalIds, isConnected, isVoter, fetchProposals]);
-
-    // Écouter nouvelles propositions
-    useWatchContractEvent({
+    try {
+      const logs = await publicClient.getLogs({
         address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        eventName: 'ProposalRegistered',
-        onLogs(logs) {
-            logs.forEach(log => {
-                const id = Number(log.args.proposalId);
-                setProposalIds(prev => 
-                    prev.includes(id) ? prev : [...prev, id].sort((a, b) => a - b)
-                );
+        event: {
+          type: 'event',
+          name: 'ProposalRegistered',
+          inputs: [{ type: 'uint256', name: 'proposalId', indexed: false }],
+        },
+        fromBlock: CONTRACT_DEPLOYMENT_BLOCK,
+        toBlock: 'latest',
+      });
+
+      const ids = logs.map((log) => Number(log.args.proposalId));
+      const uniqueIds = [...new Set(ids)].sort((a, b) => a - b);
+      setProposalIds(uniqueIds);
+    } catch (error) {
+      console.error('Erreur chargement IDs propositions:', error);
+      setProposalIds([0]);
+    }
+  }, [publicClient]);
+
+  // Charger les détails des propositions
+  const fetchProposals = useCallback(async () => {
+    if (!publicClient || proposalIds.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const fetched = await Promise.all(
+        proposalIds.map(async (id) => {
+          try {
+            const result = await publicClient.readContract({
+              address: CONTRACT_ADDRESS,
+              abi: CONTRACT_ABI,
+              functionName: 'getOneProposal',
+              args: [BigInt(id)],
             });
-        },
-    });
+            return { id, ...(result as Proposal) };
+          } catch {
+            return null;
+          }
+        })
+      );
 
-    // Écouter les votes
-    useWatchContractEvent({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        eventName: 'Voted',
-        onLogs() {
-            fetchProposals();
-        },
-    });
+      const validProposals = fetched.filter(
+        (p): p is Proposal & { id: number } => p !== null && p.description !== undefined
+      );
 
-    return {
-        proposals,
-        isLoading,
-        refetchProposals: fetchProposals,
-    };
+      setProposals(validProposals);
+    } catch (error) {
+      console.error('Erreur chargement propositions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [publicClient, proposalIds]);
+
+  // Chargement initial des IDs
+  useEffect(() => {
+    if (enabled) {
+      fetchProposalIds();
+    }
+  }, [enabled, fetchProposalIds]);
+
+  // Chargement des détails quand les IDs changent
+  useEffect(() => {
+    if (enabled) {
+      fetchProposals();
+    }
+  }, [proposalIds, enabled, fetchProposals]);
+
+  // Écouter nouvelles propositions
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    eventName: 'ProposalRegistered',
+    onLogs(logs) {
+      logs.forEach((log) => {
+        const id = Number(log.args.proposalId);
+        setProposalIds((prev) =>
+          prev.includes(id) ? prev : [...prev, id].sort((a, b) => a - b)
+        );
+      });
+    },
+  });
+
+  // Écouter les votes pour rafraîchir les compteurs
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    eventName: 'Voted',
+    onLogs() {
+      fetchProposals();
+    },
+  });
+
+  // Tri optionnel par votes
+  const sortedProposals = useMemo(() => {
+    if (!sortByVotes) return proposals;
+    return [...proposals].sort((a, b) => Number(b.voteCount) - Number(a.voteCount));
+  }, [proposals, sortByVotes]);
+
+  return {
+    proposals: sortedProposals,
+    isLoading,
+    refetchProposals: fetchProposals,
+  };
 }
 
 export default useProposals;
